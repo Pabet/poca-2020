@@ -1,5 +1,7 @@
 # Contribution rules
 
+Thibaut Gudin
+
 ## Core product team
 
 * Product Owner: [Arun Aishwarya](https://gaufre.informatique.univ-paris-diderot.fr/poca-a)
