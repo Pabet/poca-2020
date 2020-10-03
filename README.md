@@ -13,13 +13,12 @@ In addition, scala, sbt and terraform are needed for development.
 ### Create the database
 
 To connect: `sudo -u postgres psql`
-
 ```
-postgres=# create database pocatest;
+postgres=# create database poca;
 CREATE DATABASE
-postgres=# create user pocatest with encrypted password 'pocatest';
+postgres=# create user poca with encrypted password 'poca';
 CREATE ROLE
-postgres=# grant all privileges on database pocatest to pocatest;
+postgres=# grant all privileges on database poca to poca;
 GRANT
 postgres=# \connect poca
 You are now connected to database "poca" as user "postgres".
@@ -34,11 +33,23 @@ In `pg_hba.conf`, make sure there is a way to connect as poca:
 Restart the database. Test the connection with `psql poca poca`.
 
 If you plan to run tests, you need to create another database `pocatest`.
+```
+postgres=# create database pocatest;
+CREATE DATABASE
+postgres=# create user pocatest with encrypted password 'pocatest';
+CREATE ROLE
+postgres=# grant all privileges on database pocatest to pocatest;
+GRANT
+postgres=# \connect pocatest
+You are now connected to database "pocatest" as user "postgres".
+poca=# alter schema public owner to pocatest;
+ALTER SCHEMA
+```
 
 ### Create the tables
 
 ```
-sbt "runMain poca.CreateTables"
+sbt "runMain poca.AppHttpServer"
 ```
 
 ## Run the tests
@@ -61,6 +72,20 @@ Go to http://15.236.151.45/hello
 ```
 docker run poca/poca-2020:latest
 ```
+
+#### Use docker without sudo
+If you get the following error :
+
+```docker: Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Post http://%2Fvar%2Frun%2Fdocker.sock/v1.35/containers/create: dial unix /var/run/docker.sock: connect: permission denied.See 'docker run --help'.```
+
+
+consider configure docker to be used without sudo :
+```
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+If you still get the error reboot your machine.
 
 ### Run from the local directory
 
