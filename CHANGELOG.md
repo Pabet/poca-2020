@@ -1,5 +1,6 @@
 # Change log
 
+* [#10](https://gaufre.informatique.univ-paris-diderot.fr/brigout/poca-2020/issues/3) Fix bug when database tables aren't created yet
 * [#43](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/30) Allow registration of new users
 * [#27](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/27) Deploy the software on the AWS cloud
 * [#21](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/21) Publish to Docker Hub (poca/poca-2020)
