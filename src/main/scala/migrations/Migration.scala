@@ -26,7 +26,8 @@ class RunMigrations(db: Database) extends LazyLogging {
             map(versionSeq => versionSeq(0)).
             recover{
                 case exc: PSQLException => {
-                    if (exc.toString.contains("ERREUR: la relation « database_version » n'existe pas")) {
+                    if (exc.toString.contains("ERREUR: la relation « database_version » n'existe pas")
+                    || exc.toString.contains("ERROR: relation \"database_version\" does not exist")) {
                         0
                     } else {
                         throw exc
