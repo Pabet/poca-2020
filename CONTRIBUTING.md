@@ -1,13 +1,11 @@
 # Contribution rules
 
-Thibaut Gudin
 
 ## Core product team
 
 * Product Owner: [Arun Aishwarya](https://gaufre.informatique.univ-paris-diderot.fr/poca-a)
 * Development Team:
-  * [Bouchra Bennani](https://gaufre.informatique.univ-paris-diderot.fr/poca-b)
-  * [Carl Christensen](https://gaufre.informatique.univ-paris-diderot.fr/poca-c)
+  * [Thibaut Gudin](https://gaufre.informatique.univ-paris-diderot.fr/gudin)
 * SCRUM master: Diane Delaunay
 
 ## Types of gitlab issues
