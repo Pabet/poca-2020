@@ -10,6 +10,8 @@
   * [Thibaut Gudin](https://gaufre.informatique.univ-paris-diderot.fr/gudin)
   * [Joackim Brigout](https://gaufre.informatique.univ-paris-diderot.fr/brigout)
   * [Eric Wan](https://gaufre.informatique.univ-paris-diderot.fr/wan)
+  * [Quentin Ma](https://gaufre.informatique.univ-paris-diderot.fr/ma)
+
 * SCRUM master: Diane Delaunay
 
 ## Types of gitlab issues
