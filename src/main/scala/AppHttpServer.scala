@@ -4,7 +4,8 @@ package poca
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
-import scala.concurrent.{Future, Await}
+
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
 import com.typesafe.scalalogging.LazyLogging
 import ch.qos.logback.classic.{Level, Logger}
@@ -18,7 +19,7 @@ object AppHttpServer extends LazyLogging {
     val slickLogger: Logger = LoggerFactory.getLogger("slick").asInstanceOf[Logger]
     slickLogger.setLevel(Level.INFO)
 
-    def initDatabase() = {
+    def initDatabase(): Unit = {
         val isRunningOnCloud = sys.env.getOrElse("DB_HOST", "") != ""
         var rootConfig = ConfigFactory.load()
         val dbConfig = if (isRunningOnCloud) {
@@ -36,10 +37,10 @@ object AppHttpServer extends LazyLogging {
     }
 
     def main(args: Array[String]): Unit = {
-        implicit val actorsSystem = ActorSystem(guardianBehavior=Behaviors.empty, name="my-system")
-        implicit val actorsExecutionContext = actorsSystem.executionContext
+        implicit val actorsSystem: ActorSystem[Nothing] = ActorSystem(guardianBehavior=Behaviors.empty, name="my-system")
+        implicit val actorsExecutionContext: ExecutionContextExecutor = actorsSystem.executionContext
 
-        initDatabase
+        initDatabase()
         val db = MyDatabase.db
         new RunMigrations(db)()
 

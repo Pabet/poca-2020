@@ -1,7 +1,7 @@
 
 package poca
 
-import scala.concurrent.{Future, Await}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import com.typesafe.scalalogging.LazyLogging
 import slick.jdbc.PostgresProfile.api._
@@ -12,13 +12,13 @@ trait Migration {
 }
 
 class RunMigrations(db: Database) extends LazyLogging {
-    implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+    implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     val migrationList: List[Migration] = List(
         new Migration00AddVersionNumber(db),
         new Migration01CreateTables(db),
     )
 
-    def getCurrentDatabaseVersion(): Int = {
+    def getCurrentDatabaseVersion: Int = {
         val getVersionRequest: DBIO[Seq[Int]] = sql"select * from database_version;".as[Int]
         val responseFuture: Future[Seq[Int]] = db.run(getVersionRequest)
 
@@ -41,7 +41,7 @@ class RunMigrations(db: Database) extends LazyLogging {
     }
 
     def incrementDatabaseVersion(): Unit = {
-        val oldVersion = getCurrentDatabaseVersion()
+        val oldVersion = getCurrentDatabaseVersion
         val newVersion = oldVersion + 1
 
         val updateVersionRequest: DBIO[Int] = sqlu"update database_version set number = ${newVersion};"
@@ -53,7 +53,7 @@ class RunMigrations(db: Database) extends LazyLogging {
     }
 
     def apply() {
-        val version = getCurrentDatabaseVersion()
+        val version = getCurrentDatabaseVersion
 
         migrationList.slice(version, migrationList.length).foreach(migration => {
             migration()

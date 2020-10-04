@@ -9,11 +9,13 @@ package poca
 import slick.jdbc.PostgresProfile.api._
 import com.typesafe.config.Config
 
+import scala.concurrent.ExecutionContext
+
 /*
     It's important to wrap the connection to the database in a singleton Object, because database connections are expensive.
 */
 object MyDatabase {
-    implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+    implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     var db: Database = null
     
     /*

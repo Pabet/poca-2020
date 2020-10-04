@@ -1,4 +1,3 @@
-
 package poca
 
 import scala.concurrent.Future
@@ -60,12 +59,12 @@ class Routes(users: Users) extends LazyLogging {
     def getUsers() = {
         logger.info("I got a request to get user list.")
 
-        val userSeqFuture: Future[Seq[User]] = users.getAllUsers()
+        val userSeqFuture: Future[Seq[User]] = users.getAllUsers
 
         userSeqFuture.map(userSeq => html.users(userSeq))
     }
 
-    val routes: Route = 
+    val routes: Route =
         concat(
             path("hello") {
                 get {

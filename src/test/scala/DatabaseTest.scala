@@ -46,7 +46,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         // Check that the future succeeds
         createUserFuture.value should be(Some(Success(())))
 
-        val getUsersFuture: Future[Seq[User]] = users.getAllUsers()
+        val getUsersFuture: Future[Seq[User]] = users.getAllUsers
         var allUsers: Seq[User] = Await.result(getUsersFuture, Duration.Inf)
 
         allUsers.length should be(1)
@@ -106,7 +106,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createAnotherUserFuture: Future[Unit] = users.createUser("fifi")
         Await.ready(createAnotherUserFuture, Duration.Inf)
 
-        val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers()
+        val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
         val returnedUserSeq: Seq[User] = Await.result(returnedUserSeqFuture, Duration.Inf)
 
         returnedUserSeq.length should be(2)

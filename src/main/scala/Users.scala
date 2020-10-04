@@ -1,7 +1,8 @@
 
 package poca
 
-import scala.concurrent.Future
+import scala.language.postfixOps
+import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 import java.util.UUID
 
@@ -19,7 +20,7 @@ class Users {
         def * = (userId, username)
     }
 
-    implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+    implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     val db = MyDatabase.db
     val users = TableQuery[UsersTable]
 
@@ -28,7 +29,7 @@ class Users {
 
         existingUsersFuture.flatMap(existingUsers => {
             if (existingUsers.isEmpty) {
-                val userId = UUID.randomUUID.toString()
+                val userId = UUID.randomUUID.toString
                 val newUser = User(userId=userId, username=username)
                 val newUserAsTuple: (String, String) = User.unapply(newUser).get
 
@@ -57,11 +58,11 @@ class Users {
         })
     }
 
-    def getAllUsers(): Future[Seq[User]] = {
+    def getAllUsers: Future[Seq[User]] = {
         val userListFuture = db.run(users.result)
 
         userListFuture.map((userList: Seq[(String, String)]) => {
-            userList.map(User tupled _)
+            userList.map(User tupled)
         })
     }
 }
