@@ -27,7 +27,7 @@
         }],
         "secrets": [{
             "name": "DB_PASSWORD",
-            "valueFrom": "arn:aws:ssm:eu-west-3:182500928202:parameter/database/password"
+            "valueFrom": "arn:aws:ssm:eu-west-3:373907520082:parameter/database/password"
         }]
     }
 ]

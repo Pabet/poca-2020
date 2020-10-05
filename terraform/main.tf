@@ -2,9 +2,19 @@
 The AWS user used by terraform is granted the AWS managed policy AdministratorAccess.
 */
 
+variable "terraform_access_key" {
+  type = string
+  description = "Access key of terraform user"
+}
+
+variable "terraform_secret_key" {
+  type = string
+  description = "Secret key for terraform user"
+}
+
 terraform {
   backend "s3" {
-    bucket = "poca-tfstates"
+    bucket = "poca-2020"
     key = "poca-2020"
     region = "eu-west-3"
     dynamodb_table = "poca-tfstates-locks"
@@ -19,6 +29,9 @@ terraform {
 
 provider "aws" {
   region = "eu-west-3"  # Europe (Paris)
+  access_key = var.terraform_access_key
+  secret_key = var.terraform_secret_key
+
 }
 
 data "aws_ami" "amazon_linux_2" {

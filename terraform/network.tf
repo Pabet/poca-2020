@@ -74,6 +74,7 @@ resource "aws_security_group" "sg_front" {
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
 }
 
 resource "aws_security_group" "sg_back" {
