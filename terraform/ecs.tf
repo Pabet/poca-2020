@@ -141,7 +141,7 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attach_secrets" {
   role = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = aws_iam_policy.access_db_password.arn
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attach_managed_policy" {

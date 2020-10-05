@@ -124,7 +124,7 @@ docker image prune
 In the directory `terraform`, to initialize the project:
 
 ```
-terraform init
+terraform init -backend-config="access_key=<ACCESS_KEY>" -backend-config="secret_key=<SECRET_KEY>"
 ```
 
 Set the secrets in you shell:
