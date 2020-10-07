@@ -12,6 +12,7 @@
   * [Eric Wan](https://gaufre.informatique.univ-paris-diderot.fr/wan)
   * [Quentin Ma](https://gaufre.informatique.univ-paris-diderot.fr/ma)
   * [Haifa Benhmida](https://gaufre.informatique.univ-paris-diderot.fr/Haifa)
+  * [Sofia Ait Ahcene](https://gaufre.informatique.univ-paris-diderot.fr/aitahcen)
 
 * SCRUM master: Diane Delaunay
 
