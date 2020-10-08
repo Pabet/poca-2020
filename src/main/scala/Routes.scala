@@ -15,7 +15,7 @@ class Routes(users: Users) extends LazyLogging {
         logger.info("I got a request to greet.")
         HttpEntity(
             ContentTypes.`text/html(UTF-8)`,
-            "<h1>Say hello to akka-http</h1>"
+            "<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>"
         )
     }
 
