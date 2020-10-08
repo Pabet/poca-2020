@@ -14,6 +14,7 @@
   * [Haifa Benhmida](https://gaufre.informatique.univ-paris-diderot.fr/Haifa)
   * [Sofia Ait Ahcene](https://gaufre.informatique.univ-paris-diderot.fr/aitahcen)
   * [Patrick Bettermann](https://gaufre.informatique.univ-paris-diderot.fr/betterma)
+  * [Maxence Beauté](https://gaufre.informatique.univ-paris-diderot.fr/mbeaute)
 
 * SCRUM master: Diane Delaunay
 
