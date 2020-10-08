@@ -28,7 +28,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
 
-            entityAs[String] should ===("<h1>Say hello to akka-http</h1>")
+            entityAs[String] should ===("<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>")
         }
     }
 
