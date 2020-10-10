@@ -73,7 +73,7 @@ deploy:
     - export TF_VAR_image_digest="@`cat ../image-digest/content`"
     - export TF_VAR_db_password=`echo -n $DB_PASSWORD`
     - terraform init -input=false -backend-config="access_key=`echo -n $ACCES_KEY`" -backend-config="secret_key=`echo -n $SECRET_KEY`"
-    - terraform apply -input=false -auto-approve --var-file=integration.tfvars
+    - terraform apply -input=false -auto-approve --var-file=integration.tfvars -backend-config="access_key=`echo -n $ACCES_KEY`" -backend-config="secret_key=`echo -n $SECRET_KEY`"
   only:
     refs:
       - master
