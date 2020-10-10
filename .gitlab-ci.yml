@@ -71,7 +71,7 @@ deploy:
     - cd ../terraform
     - export TF_IN_AUTOMATION=1
     - export TF_VAR_image_digest="@`cat ../image-digest/content`"
-    - terraform init -input=false
+    - terraform init -input=false -backend-config="access_key=$ACCESS_KEY" -backend-config="secret_key=$SECRET_KEY"
     - terraform apply -input=false -auto-approve --var-file=integration.tfvars
   only:
     refs:
