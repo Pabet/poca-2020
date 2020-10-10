@@ -65,8 +65,8 @@ deploy:
     - apk add curl
     - mkdir terraform_install
     - cd terraform_install
-    - curl -OJ https://releases.hashicorp.com/terraform/0.13.3/terraform_0.13.3_linux_amd64.zip
-    - unzip terraform_0.13.3_linux_amd64.zip && rm terraform_0.13.3_linux_amd64.zip
+    - curl -OJ https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip
+    - unzip terraform_0.13.4_linux_amd64.zip && rm terraform_0.13.3_linux_amd64.zip
     - mv terraform /usr/bin/terraform
     - cd ../terraform
     - export TF_IN_AUTOMATION=1
