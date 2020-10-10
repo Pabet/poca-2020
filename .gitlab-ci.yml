@@ -69,11 +69,8 @@ deploy:
     - unzip terraform_0.13.4_linux_amd64.zip && rm terraform_0.13.4_linux_amd64.zip
     - mv terraform /usr/bin/terraform
     - cd ../terraform
-    - export TF_IN_AUTOMATION=1
-    - export TF_VAR_image_digest="@`cat ../image-digest/content`"
-    - export TF_VAR_db_password=`echo -n $DB_PASSWORD`
-    - terraform init -input=false -backend-config="access_key=`echo -n $ACCES_KEY`" -backend-config="secret_key=`echo -n $SECRET_KEY`"
-    - terraform apply -input=false -auto-approve --var-file=integration.tfvars -backend-config="access_key=`echo -n $ACCES_KEY`" -backend-config="secret_key=`echo -n $SECRET_KEY`"
+    - terraform init -input=false
+    - terraform apply -input=false -auto-approve --var-file=integration.tfvars
   only:
     refs:
       - master
