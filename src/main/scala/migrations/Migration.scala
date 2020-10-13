@@ -4,6 +4,7 @@ package poca
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import com.typesafe.scalalogging.LazyLogging
+import migrations.Migration02AddFakeData
 import slick.jdbc.PostgresProfile.api._
 import org.postgresql.util.PSQLException
 
@@ -16,6 +17,7 @@ class RunMigrations(db: Database) extends LazyLogging {
     val migrationList: List[Migration] = List(
         new Migration00AddVersionNumber(db),
         new Migration01CreateTables(db),
+        new Migration02AddFakeData(db),
     )
 
     def getCurrentDatabaseVersion: Int = {
