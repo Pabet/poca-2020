@@ -39,7 +39,8 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
 
     test("Users.createUser should create a new user") {
         val users: Users = new Users()
-
+        val initialUsersFuture = users.getAllUsers
+        var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
         val createUserFuture: Future[Unit] = users.createUser("toto")
         Await.ready(createUserFuture, Duration.Inf)
 
@@ -49,8 +50,8 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val getUsersFuture: Future[Seq[User]] = users.getAllUsers
         var allUsers: Seq[User] = Await.result(getUsersFuture, Duration.Inf)
 
-        allUsers.length should be(1)
-        allUsers.head.username should be("toto")
+        allUsers.length should be(initialAllUsers.length+1)
+        allUsers.last.username should be("toto")
     }
 
     test("Users.createUser returned future should fail if the user already exists") {
@@ -100,6 +101,9 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getAllUsers should return a list of users") {
         val users: Users = new Users()
 
+        val initialUsersFuture = users.getAllUsers
+        var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
+
         val createUserFuture: Future[Unit] = users.createUser("riri")
         Await.ready(createUserFuture, Duration.Inf)
 
@@ -109,6 +113,6 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
         val returnedUserSeq: Seq[User] = Await.result(returnedUserSeqFuture, Duration.Inf)
 
-        returnedUserSeq.length should be(2)
+        returnedUserSeq.length should be(initialAllUsers.length + 2)
     }
 }

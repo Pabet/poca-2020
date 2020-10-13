@@ -15,16 +15,15 @@ final case class UserAlreadyExistsException(private val message: String="", priv
     extends Exception(message, cause) 
 final case class InconsistentStateException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause)
-
+class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
+    def userId = column[String]("userId", O.PrimaryKey)
+    def username = column[String]("username")
+    def userPassword = column[String]("userPassword")
+    def userMail = column[String]("userMail")
+    def userLastConnection = column[LocalDateTime]("userLastConnection")
+    def * = (userId, username,userPassword,userMail,userLastConnection) <> (User.tupled,User.unapply)
+}
 class Users {
-    class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
-        def userId = column[String]("userId", O.PrimaryKey)
-        def username = column[String]("username")
-        def userPassword = column[String]("userPassword")
-        def userMail = column[String]("userMail")
-        def userLastConnection = column[LocalDateTime]("userLastConnection")
-        def * = (userId, username,userPassword,userMail,userLastConnection) <> (User.tupled,User.unapply)
-    }
     implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     val db = MyDatabase.db
     val users = TableQuery[UsersTable]
