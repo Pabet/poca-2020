@@ -1,25 +1,30 @@
 
 package poca
 
+
+import java.time.LocalDateTime
+
 import scala.language.postfixOps
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 import java.util.UUID
 
-case class User(userId: String, username: String)
+case class User(userId: String, username: String, userPassword: String = "", userMail: String ="", userLastConnection: LocalDateTime)
 
 final case class UserAlreadyExistsException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause) 
 final case class InconsistentStateException(private val message: String="", private val cause: Throwable=None.orNull)
-    extends Exception(message, cause) 
+    extends Exception(message, cause)
 
 class Users {
-    class UsersTable(tag: Tag) extends Table[(String, String)](tag, "users") {
+    class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
         def userId = column[String]("userId", O.PrimaryKey)
         def username = column[String]("username")
-        def * = (userId, username)
+        def userPassword = column[String]("userPassword")
+        def userMail = column[String]("userMail")
+        def userLastConnection = column[LocalDateTime]("userLastConnection")
+        def * = (userId, username,userPassword,userMail,userLastConnection) <> (User.tupled,User.unapply)
     }
-
     implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     val db = MyDatabase.db
     val users = TableQuery[UsersTable]
@@ -27,13 +32,11 @@ class Users {
     def createUser(username: String): Future[Unit] = {
         val existingUsersFuture = getUserByUsername(username)
 
-        existingUsersFuture.flatMap(existingUsers => {
-            if (existingUsers.isEmpty) {
+        existingUsersFuture.flatMap(existingUser => {
+            if (existingUser.isEmpty) {
                 val userId = UUID.randomUUID.toString
-                val newUser = User(userId=userId, username=username)
-                val newUserAsTuple: (String, String) = User.unapply(newUser).get
-
-                val dbio: DBIO[Int] = users += newUserAsTuple
+                val newUser = User(userId, username, "", "", LocalDateTime.now())
+                val dbio: DBIO[Int] = users += newUser
                 var resultFuture: Future[Int] = db.run(dbio)
 
                 // We do not care about the Int value
@@ -49,10 +52,10 @@ class Users {
 
         val userListFuture = db.run(query.result)
 
-        userListFuture.map((userList: Seq[(String, String)]) => {
+        userListFuture.map((userList) => {
             userList.length match {
                 case 0 => None
-                case 1 => Some(User tupled userList.head)
+                case 1 => Some(userList.head)
                 case _ => throw new InconsistentStateException(s"Username $username is linked to several users in database!")
             }
         })
@@ -61,8 +64,8 @@ class Users {
     def getAllUsers: Future[Seq[User]] = {
         val userListFuture = db.run(users.result)
 
-        userListFuture.map((userList: Seq[(String, String)]) => {
-            userList.map(User tupled)
+        userListFuture.map((userList) => {
+            userList
         })
     }
 }

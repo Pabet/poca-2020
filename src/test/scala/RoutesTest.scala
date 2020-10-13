@@ -1,12 +1,14 @@
 
+import java.time.LocalDateTime
+
 import scala.concurrent.Future
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.http.scaladsl.model.{HttpRequest, StatusCodes, ContentTypes, FormData, HttpMethods}
+import akka.http.scaladsl.model.{ContentTypes, FormData, HttpMethods, HttpRequest, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
-import poca.{MyDatabase, Users, User, UserAlreadyExistsException, Routes}
+import poca.{MyDatabase, Routes, User, UserAlreadyExistsException, Users}
 
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
@@ -91,9 +93,9 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     test("Route GET /users should display the list of users") {
         var mockUsers = mock[Users]
         val userList = List(
-            User(username="riri", userId="id1"),
-            User(username="fifi", userId="id2"),
-            User(username="lulu", userId="id2")
+            User(username="riri", userId="id1",userPassword="",userMail="",userLastConnection = LocalDateTime.now),
+            User(username="fifi", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now),
+            User(username="lulu", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now)
         )
         (mockUsers.getAllUsers _).expects().returns(Future(userList)).once()
 
