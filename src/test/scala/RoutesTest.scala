@@ -8,7 +8,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
-import poca.{MyDatabase, Routes, User, UserAlreadyExistsException, Users}
+import poca.{MyDatabase, Routes, User, UserAlreadyExistsException, Users, Products, Product}
 
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
@@ -22,7 +22,8 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
     test("Route GET /hello should say hello") {
         var mockUsers = mock[Users]
-        val routesUnderTest = new Routes(mockUsers).routes
+        val mockProducts = mock[Products]
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
         val request = HttpRequest(uri = "/hello")
         request ~> routesUnderTest ~> check {
@@ -36,8 +37,8 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
     test("Route GET /signup should returns the signup page") {
         var mockUsers = mock[Users]
-        val routesUnderTest = new Routes(mockUsers).routes
-
+        val mockProducts = mock[Products]
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
         val request = HttpRequest(uri = "/signup")
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -51,8 +52,8 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     test("Route POST /register should create a new user") {
         var mockUsers = mock[Users]
         (mockUsers.createUser _).expects("toto").returning(Future(())).once()
-
-        val routesUnderTest = new Routes(mockUsers).routes
+        val mockProducts = mock[Products]
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
         val request = HttpRequest(
             method = HttpMethods.POST,
@@ -73,8 +74,9 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         (mockUsers.createUser _).expects("toto").returns(Future({
             throw new UserAlreadyExistsException("")
         })).once()
+        val mockProducts = mock[Products]
 
-        val routesUnderTest = new Routes(mockUsers).routes
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
         val request = HttpRequest(
             method = HttpMethods.POST,
@@ -99,7 +101,8 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         )
         (mockUsers.getAllUsers _).expects().returns(Future(userList)).once()
 
-        val routesUnderTest = new Routes(mockUsers).routes
+        val mockProducts = mock[Products]
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
         val request = HttpRequest(uri = "/users")
         request ~> routesUnderTest ~> check {
@@ -108,6 +111,25 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
 
             entityAs[String].length should be(203)
+        }
+    }
+
+    test("Route GET /products should display the list of products") {
+        var mockUsers = mock[Users]
+        var mockProducts = mock[Products]
+
+        val productList = List(
+            Product(productName="p0", productId="id0", productDetail="desc0", productPrice=0)
+        )
+        (mockProducts.getAllProducts _).expects().returns(Future(productList)).once()
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
+
+        val request = HttpRequest(uri = "/products")
+        request ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+
+            contentType should ===(ContentTypes.`text/html(UTF-8)`)
         }
     }
 }

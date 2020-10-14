@@ -45,7 +45,8 @@ object AppHttpServer extends LazyLogging {
         new RunMigrations(db)()
 
         var users = new Users()
-        val routes = new Routes(users)
+        var products = new Products()
+        val routes = new Routes(users, products)
 
         val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(routes.routes)
 

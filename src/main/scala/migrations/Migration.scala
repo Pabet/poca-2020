@@ -36,7 +36,7 @@ class RunMigrations(db: Database) extends LazyLogging {
                     }
                 }
             }
-        
+
         val version = Await.result(versionFuture, Duration.Inf)
         logger.info(s"Database version is $version")
         version
