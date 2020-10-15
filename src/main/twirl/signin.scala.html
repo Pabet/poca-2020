@@ -8,34 +8,20 @@
 	
 	<body>
 		<div id="formulaire">
-			<h1 id="signup">Signup</h1>
+			<h1 id="signup">Signin</h1>
 
 			<p>Please, enter your username and passeword:</p>
 
-			<form action"register.php" method="post"><!-- TODO: compléter le "action" en mettant l'url vers un dossier ?/register? (=là où on est redirigé après connexion)-->
-				<label id="usr_name" for="username">Username:</label><br>
+			<form action"" method="post"><!-- TODO: compléter le "action" en mettant l'url vers un dossier ?/register? (=là où on est redirigé après connexion)-->
+				<label id="usr_name" for="username">Username:  </label>
 				<input id="input_txt" type="text" name="username"></input><br>
-				<label id="pswrd" for="password">Passeword:</label><br>
+				<label id="pswrd" for="password">Passeword:</label>
 				<input id="input_pswrd" type="text" name="password"></input><br>
 				<input id="connexion" type="submit" value="Connection">
-				<!-- Je ne sais pas si j'ai le droit de changer le type du document en du php...
-				<?php
-				if(isset($_GET['erreur'])){
-					$err = $_GET['erreur'];
-					if($err==1){
-						echo "<p  color=red>User unknown</p>"
-					}else if($err==2){
-						echo"<p color=red>Please, enter a Username</p>"
-					}else{
-						echo"<p color=red>Sorry, an unknow error have been raised.\nPlease: contact us.</p>"
-					}
-				}
-				?>
-				-->
 			</form>
 	
 			<a href="signup.scala.html"><span>Creat A New Profil</span></a><br>
-			<a href=""><span>I forgot my password [TODO]</span></a>
+			<a href=""><span>"I forgot my password" [TODO]</span></a>
 		</div>
 	</body>
 </html>

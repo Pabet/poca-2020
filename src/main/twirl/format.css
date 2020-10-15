@@ -3,7 +3,7 @@ width:1090px;background-attachment:scroll;margin:0px auto;
 background-color:SILVER;background-repeat:no-repeat;}
 div#formulaire{
 	color:black; font-size:20px;background-color:WHITE;
-	width:60%; height: 60%;margin:auto auto; margin-top:8%;
+	width:60%; height: 60%;margin:auto auto; margin-top:10%;
 }
 h1#signup{
 	text-align:center;
@@ -18,13 +18,13 @@ label#pswrd{
 }
 
 input#input_txt{
-	margin-left:2%;
+	margin-left:10px;
 }
 
 input#input_pswrd{
-	margin-left:2%;
+	margin-left:1px;
 }
 
 input#connexion{
-	margin-left:40%; width:30%;
+	margin-left:30%; width:30%; margin-top:2%; margin-bottom:3%;
 }
