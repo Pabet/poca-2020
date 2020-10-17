@@ -12,7 +12,7 @@ import java.util.UUID
 case class User(userId: String, username: String, userPassword: String = "", userMail: String ="", userLastConnection: LocalDateTime)
 
 final case class UserAlreadyExistsException(private val message: String="", private val cause: Throwable=None.orNull)
-    extends Exception(message, cause) 
+    extends Exception(message, cause)
 final case class InconsistentStateException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause)
 class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {

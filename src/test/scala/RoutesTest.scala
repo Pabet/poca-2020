@@ -1,4 +1,3 @@
-
 import java.time.LocalDateTime
 
 import scala.concurrent.Future
@@ -45,7 +44,8 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
 
-            entityAs[String].length should be(330)
+            entityAs[String].length should be(323)
+
         }
     }
 

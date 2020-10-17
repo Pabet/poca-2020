@@ -1,17 +1,18 @@
 package poca
 
-import scala.concurrent.Future
-import akka.http.scaladsl.server.Directives.{path, get, post, formFieldMap, complete, concat}
+import scala.concurrent.{ExecutionContext, Future}
+import akka.http.scaladsl.server.Directives.{complete, concat, formFieldMap, get, path, post}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ContentTypes, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import com.typesafe.scalalogging.LazyLogging
 import TwirlMarshaller._
+import play.twirl.api.HtmlFormat
 
 
 class Routes(users: Users, products: Products) extends LazyLogging {
-  implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+  implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  def getHello() = {
+  def getHello(): HttpEntity.Strict = {
     logger.info("I got a request to greet.")
     HttpEntity(
       ContentTypes.`text/html(UTF-8)`,
@@ -19,7 +20,12 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     )
   }
 
-  def getSignup() = {
+  def getSignIn: HtmlFormat.Appendable = {
+    logger.info("I got a request for signin.")
+    html.signin()
+  }
+
+  def getSignup(): HtmlFormat.Appendable = {
     logger.info("I got a request for signup.")
     html.signup()
   }
@@ -56,7 +62,7 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     }
   }
 
-  def getUsers() = {
+  def getUsers(): Future[HtmlFormat.Appendable] = {
     logger.info("I got a request to get user list.")
 
     val userSeqFuture: Future[Seq[User]] = users.getAllUsers
@@ -64,7 +70,7 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     userSeqFuture.map(userSeq => html.users(userSeq))
   }
 
-  def getProducts() = {
+  def getProducts(): Future[HtmlFormat.Appendable] = {
     logger.info("I got a request to get product list.")
 
     val productSeqFuture: Future[Seq[Product]] = products.getAllProducts
@@ -72,15 +78,27 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     productSeqFuture.map(productSeq => html.products(productSeq))
   }
 
-  def buyProduct(fields: Map[String, String]): Future[HttpResponse] = {
-    val id = fields.get("id")
-    logger.info(s"I got a request to buy the product $id");
+  def buyProduct(fields: Map[String, String]): Future[HtmlFormat.Appendable] = {
+    val productId = fields.get("id").orNull
+    logger.info(s"I got a request to buy the product $productId");
+
+    val productFuture: Future[Product] = Future {
+      Product(
+        productId = fields.get("id").orNull,
+        productName = fields.get("name").orNull,
+        productPrice = fields.get("price").map(f => f.toDouble).get,
+        productDetail = fields.get("detail").orNull
+      )
+    }
+
     Future(
       HttpResponse(
         StatusCodes.OK,
-        entity = s"Thank you ! you bought '$id'"
+        entity = s"Thank you ! you bought '$productId'"
       )
     )
+
+    productFuture.map(product => html.purchase(product))
   }
 
   val routes: Route =
@@ -88,6 +106,11 @@ class Routes(users: Users, products: Products) extends LazyLogging {
       path("hello") {
         get {
           complete(getHello)
+        }
+      },
+      path("signin") {
+        get {
+          complete(getSignIn)
         }
       },
       path("signup") {
@@ -110,7 +133,7 @@ class Routes(users: Users, products: Products) extends LazyLogging {
           complete(getProducts)
         }
       },
-      path("buyProduct") {
+      path("purchase") {
         (post & formFieldMap) { fields =>
           complete(buyProduct(fields))
         }
