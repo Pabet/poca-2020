@@ -1,16 +1,16 @@
 
-import scala.util.{Success, Failure}
-import scala.concurrent.{Future, Await}
+import scala.util.{Failure, Success}
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.meta._
-import org.scalatest.{Matchers, BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 import org.scalatest.funsuite.AnyFunSuite
 import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import ch.qos.logback.classic.{Level, Logger}
 import org.slf4j.LoggerFactory
-import poca.{MyDatabase, Users, User, UserAlreadyExistsException, Routes, RunMigrations}
+import poca.{MyDatabase, Products, Routes, RunMigrations, User, UserAlreadyExistsException, Users}
 
 
 class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
@@ -114,5 +114,23 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val returnedUserSeq: Seq[User] = Await.result(returnedUserSeqFuture, Duration.Inf)
 
         returnedUserSeq.length should be(initialAllUsers.length + 2)
+    }
+
+    test("Products.getAllProducts should return a list of products") {
+        val products: Products = new Products()
+
+        val initialProductsFuture = products.getAllProducts
+        var initialAllProducts = Await.result(initialProductsFuture, Duration.Inf)
+
+        val createProductFuture: Future[Unit] = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger")
+        Await.ready(createProductFuture, Duration.Inf)
+
+        val createAnotherProductFuture: Future[Unit] = products.createProduct("Miroir",100.10,"Voir le visage")
+        Await.ready(createAnotherProductFuture, Duration.Inf)
+
+        val returnedProductSeqFuture: Future[Seq[Product]] = products.getAllProducts
+        val returnedProductSeq: Seq[Product] = Await.result(returnedProductSeqFuture, Duration.Inf)
+
+        returnedProductSeq.length should be(initialAllProducts.length + 2)
     }
 }
