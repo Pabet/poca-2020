@@ -76,11 +76,11 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     val id = fields.get("id")
     logger.info(s"I got a request to buy the product $id");
     Future(
-          HttpResponse(
-            StatusCodes.BadRequest,
-            entity = "Not implemented yet."
-          )
-        )
+      HttpResponse(
+        StatusCodes.OK,
+        entity = s"Thank you ! you bought '$id'"
+      )
+    )
   }
 
   val routes: Route =

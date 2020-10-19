@@ -43,7 +43,9 @@ class Products {
   }
 
   def getAllProducts: Future[Seq[Product]] = {
-    db.run(products.result)
+    val productListFuture =  db.run(products.result)
+    productListFuture.map((productList) => {
+      productList
+    })
   }
-
 }
