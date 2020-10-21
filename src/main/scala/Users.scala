@@ -13,8 +13,7 @@ case class User(userId: String, username: String, userPassword: String = "", use
 
 final case class UserAlreadyExistsException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause)
-final case class InconsistentStateException(private val message: String="", private val cause: Throwable=None.orNull)
-    extends Exception(message, cause)
+
 class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
     def userId = column[String]("userId", O.PrimaryKey)
     def username = column[String]("username")

@@ -11,6 +11,9 @@ import com.typesafe.config.Config
 
 import scala.concurrent.ExecutionContext
 
+final case class InconsistentStateException(private val message: String="", private val cause: Throwable=None.orNull)
+  extends Exception(message, cause)
+
 /*
     It's important to wrap the connection to the database in a singleton Object, because database connections are expensive.
 */

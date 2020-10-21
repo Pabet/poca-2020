@@ -119,7 +119,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         var mockProducts = mock[Products]
 
         val productList = List(
-            Product(productName="p0", productId="id0", productDetail="desc0", productPrice=0)
+            Product(productName="p0", productId="id0", productDetail="desc0", productPrice=0, categoryId = None)
         )
         (mockProducts.getAllProducts _).expects().returns(Future(productList)).once()
 
