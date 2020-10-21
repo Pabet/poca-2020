@@ -87,7 +87,8 @@ class Routes(users: Users, products: Products) extends LazyLogging {
         productId = fields.get("id").orNull,
         productName = fields.get("name").orNull,
         productPrice = fields.get("price").map(f => f.toDouble).get,
-        productDetail = fields.get("detail").orNull
+        productDetail = fields.get("detail").orNull,
+        categoryId = None
       )
     }
 
