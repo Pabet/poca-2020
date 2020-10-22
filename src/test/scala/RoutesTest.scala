@@ -7,7 +7,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
-import poca.{MyDatabase, Routes, User, UserAlreadyExistsException, Users, Products, Product}
+import poca.{MyDatabase, Routes, User, UserAlreadyExistsException, Users, Products, Product, IncorrectPriceException, Category, Categories, CategoryDoesntExistsException}
 
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
@@ -125,11 +125,79 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
-        val request = HttpRequest(uri = "/products")
+        val request = HttpRequest(
+            method = HttpMethods.GET,
+            uri = "/products")
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
+        }
+    }
+
+    test("Route POST /products should create a new product") {
+        var mockUsers = mock[Users]
+        val mockProducts = mock[Products]
+        
+        val category = Some(Category(None, "testCategory"))
+        (mockProducts.createProduct _).expects("test", 1, "test details", category).returning(Future(())).once()
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
+
+        val request = HttpRequest(
+            method = HttpMethods.POST,
+            uri = "/products",
+            entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
+        )
+        request ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+            contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+            entityAs[String] should ===("Product successfully added to the marketplace.")
+        }
+    }
+
+    test("Route POST /products should warn the user when product is not added due to price") {
+        var mockUsers = mock[Users]
+        var mockProducts = mock[Products]
+
+        (mockProducts.createProduct _).expects("test", -1, "test details", None).returns(Future({
+            throw new IncorrectPriceException("")
+        })).once()
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
+
+        val request = HttpRequest(
+            method = HttpMethods.POST,
+            uri = "/products",
+            entity = FormData(("name", "test"), ("price", "-1"), ("detail", "test details")).toEntity
+        )
+        request ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+            contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+            entityAs[String] should ===("Cannot insert product with a price < 0")
+        }
+    }
+
+    test("Route POST /products should warn the user when product is not added due to category") {
+        var mockUsers = mock[Users]
+        val mockProducts = mock[Products]
+        
+        val category = Some(Category(None, "testCategory"))
+        (mockProducts.createProduct _).expects("test", 1, "test details", category).returning(Future({
+            throw new IncorrectPriceException("")
+        })).once()
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts).routes
+
+        val request = HttpRequest(
+            method = HttpMethods.POST,
+            uri = "/products",
+            entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
+        )
+        request ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+            contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+            entityAs[String] should ===("Cannot insert product with a price < 0")
         }
     }
 }

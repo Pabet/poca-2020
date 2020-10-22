@@ -62,6 +62,51 @@ class Routes(users: Users, products: Products) extends LazyLogging {
     }
   }
 
+  def addProduct(fields: Map[String, String]): Future[HttpResponse] = {
+    logger.info("I got a request to add a Product.")
+
+    var category: Option[Category] = None
+    fields.get("categoryName") match {
+      case Some(categoryName) => {
+	    category = Some(
+	      new Category(
+	  	    categoryId=None,
+	   	    categoryName=categoryName
+	      )
+	    )
+	  }
+	  case None => {
+		category = None
+	  }
+	}
+
+	val productCreation: Future[Unit] = products.createProduct(
+	  productName=fields.get("name").orNull,
+	  productPrice=fields.get("price").map(f => f.toDouble).get,
+	  productDetail=fields.get("detail").orNull,
+	  category=category
+	)
+    productCreation.map(_ => {
+      HttpResponse(
+        StatusCodes.OK,
+        entity = "Product successfully added to the marketplace."
+	  )
+    }).recover({
+      case exc: CategoryDoesntExistsException => {
+        HttpResponse(
+          StatusCodes.OK,
+          entity = "Cannot insert product, there is not this category."
+        )
+      }
+      case exc: IncorrectPriceException => {
+        HttpResponse(
+          StatusCodes.OK,
+          entity = "Cannot insert product with a price < 0"
+        )
+      }
+    })
+  }
+
   def getUsers(): Future[HtmlFormat.Appendable] = {
     logger.info("I got a request to get user list.")
 
@@ -132,6 +177,11 @@ class Routes(users: Users, products: Products) extends LazyLogging {
       path("products") {
         get {
           complete(getProducts)
+        }
+      },
+      path("products") {
+        (post & formFieldMap) { fields =>
+          complete(addProduct(fields))
         }
       },
       path("purchase") {
