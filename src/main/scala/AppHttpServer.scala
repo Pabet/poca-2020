@@ -56,8 +56,8 @@ object AppHttpServer extends LazyLogging {
         })
 
         val waitOnFuture = serverStartedFuture.flatMap(unit => Future.never)
-        
-        scala.sys.addShutdownHook { 
+
+        scala.sys.addShutdownHook {
             actorsSystem.terminate
             db.close
         }
