@@ -11,7 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import ch.qos.logback.classic.{Level, Logger}
 import org.slf4j.LoggerFactory
-import poca.{Categories, Category, CategoryDoesntExistsException, MyDatabase, Product, Products, Routes, RunMigrations, User, UserAlreadyExistsException, Users}
+import poca.{Cart, Carts, Categories, Category, CategoryDoesntExistsException, MyDatabase, Product, Products, Routes, RunMigrations, User, UserAlreadyExistsException, UserDoesntExistException, Users}
 
 
 class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
@@ -42,26 +42,24 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users: Users = new Users()
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
-        val createUserFuture: Future[Unit] = users.createUser("toto")
-        Await.ready(createUserFuture, Duration.Inf)
-
-        // Check that the future succeeds
-        createUserFuture.value should be(Some(Success(())))
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val getUsersFuture: Future[Seq[User]] = users.getAllUsers
         var allUsers: Seq[User] = Await.result(getUsersFuture, Duration.Inf)
 
         allUsers.length should be(initialAllUsers.length+1)
         allUsers.last.username should be("toto")
+        allUsers.last.userId should be(newUserId)
     }
 
     test("Users.createUser returned future should fail if the user already exists") {
         val users: Users = new Users()
 
-        val createUserFuture: Future[Unit] = users.createUser("toto")
+        val createUserFuture = users.createUser("toto")
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createDuplicateUserFuture: Future[Unit] = users.createUser("toto")
+        val createDuplicateUserFuture = users.createUser("toto")
         Await.ready(createDuplicateUserFuture, Duration.Inf)
 
         createDuplicateUserFuture.value match {
@@ -75,7 +73,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getUserByUsername should return no user if it does not exist") {
         val users: Users = new Users()
 
-        val createUserFuture: Future[Unit] = users.createUser("toto")
+        val createUserFuture = users.createUser("toto")
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("somebody-else")
@@ -87,7 +85,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getUserByUsername should return a user") {
         val users: Users = new Users()
 
-        val createUserFuture: Future[Unit] = users.createUser("toto")
+        val createUserFuture = users.createUser("toto")
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("toto")
@@ -105,10 +103,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
 
-        val createUserFuture: Future[Unit] = users.createUser("riri")
+        val createUserFuture = users.createUser("riri")
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createAnotherUserFuture: Future[Unit] = users.createUser("fifi")
+        val createAnotherUserFuture = users.createUser("fifi")
         Await.ready(createAnotherUserFuture, Duration.Inf)
 
         val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
@@ -121,16 +119,14 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val products: Products = new Products()
         val initialProductsFuture = products.getAllProducts
         var initialAllProducts = Await.result(initialProductsFuture, Duration.Inf)
-        val createProductFuture: Future[Unit] = products.createProduct("toto",210.0,"details",None)
-        Await.ready(createProductFuture, Duration.Inf)
-
-        // Check that the future succeeds
-        createProductFuture.value should be(Some(Success(())))
+        val createProductFuture = products.createProduct("toto",210.0,"details",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
 
         val getProductsFuture: Future[Seq[Product]] = products.getAllProducts
         var allProducts: Seq[Product] = Await.result(getProductsFuture, Duration.Inf)
 
         allProducts.length should be(initialAllProducts.length+1)
+        allProducts.last.productId should be(newProductId)
         allProducts.last.productName should be("toto")
         allProducts.last.productPrice should be(210.0)
         allProducts.last.productDetail should be("details")
@@ -144,17 +140,17 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val categories : Categories = new Categories()
         val createCategoryFuture = categories.createCategory("awesomeCategory")
         Await.ready(createCategoryFuture, Duration.Inf)
-        val createProductFuture: Future[Unit] = products.createProduct("toto",210.0,"details",Some(Category(None,"awesomeCategory")))
-        Await.ready(createProductFuture, Duration.Inf)
         val getCategoryFuture = categories.getCategoryByName("awesomeCategory")
         val returnedCategory = Await.result(getCategoryFuture,Duration.Inf)
-        // Check that the future succeeds
-        createProductFuture.value should be(Some(Success(())))
+
+        val createProductFuture = products.createProduct("toto",210.0,"details",Some(Category(None,"awesomeCategory")))
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
 
         val getProductsFuture: Future[Seq[Product]] = products.getAllProducts
         var allProducts: Seq[Product] = Await.result(getProductsFuture, Duration.Inf)
 
         allProducts.length should be(initialAllProducts.length+1)
+        allProducts.last.productId should be(newProductId)
         allProducts.last.productName should be("toto")
         allProducts.last.productPrice should be(210.0)
         allProducts.last.productDetail should be("details")
@@ -165,7 +161,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val products: Products = new Products()
         val initialProductsFuture = products.getAllProducts
         var initialAllProducts = Await.result(initialProductsFuture, Duration.Inf)
-        val createProductFuture: Future[Unit] = products.createProduct("toto",210.0,"details",Some(Category(None,"TYUIKDF")))
+        val createProductFuture = products.createProduct("toto",210.0,"details",Some(Category(None,"TYUIKDF")))
         Await.ready(createProductFuture, Duration.Inf)
 
         createProductFuture.value match {
@@ -174,7 +170,6 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
             }
             case _ => fail("The future should fail.")
         }
-
     }
 
     test("Products.getAllProducts should return a list of products") {
@@ -183,10 +178,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialProductsFuture = products.getAllProducts
         var initialAllProducts = Await.result(initialProductsFuture, Duration.Inf)
 
-        val createProductFuture: Future[Unit] = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",None)
+        val createProductFuture = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",None)
         Await.ready(createProductFuture, Duration.Inf)
 
-        val createAnotherProductFuture: Future[Unit] = products.createProduct("Miroir",100.10,"Voir le visage",None)
+        val createAnotherProductFuture = products.createProduct("Miroir",100.10,"Voir le visage",None)
         Await.ready(createAnotherProductFuture, Duration.Inf)
 
         val returnedProductSeqFuture: Future[Seq[Product]] = products.getAllProducts
@@ -202,7 +197,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createCategoryFuture = categories.createCategory("awesomeCategory")
         Await.ready(createCategoryFuture, Duration.Inf)
 
-        val createProductFuture: Future[Unit] = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",Some(Category(None,"awesomeCategory")))
+        val createProductFuture = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",Some(Category(None,"awesomeCategory")))
         Await.ready(createProductFuture, Duration.Inf)
 
         val returnedProductSeqFuture: Future[Seq[Product]] = products.getAllProducts
@@ -219,7 +214,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val categories: Categories = new Categories()
         val initialCategoriesFuture = categories.getAllCategories
         var initialAllCategories = Await.result(initialCategoriesFuture, Duration.Inf)
-        val createCategoryFuture: Future[Unit] = categories.createCategory("sample")
+        val createCategoryFuture = categories.createCategory("sample")
         Await.ready(createCategoryFuture, Duration.Inf)
 
         // Check that the future succeeds
@@ -239,10 +234,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialCategoriesFuture = categories.getAllCategories
         var initialAllCategories = Await.result(initialCategoriesFuture, Duration.Inf)
 
-        val createCategoryFuture: Future[Unit] = categories.createCategory("riri")
+        val createCategoryFuture = categories.createCategory("riri")
         Await.ready(createCategoryFuture, Duration.Inf)
 
-        val createAnotherCategoryFuture: Future[Unit] = categories.createCategory("fifi")
+        val createAnotherCategoryFuture = categories.createCategory("fifi")
         Await.ready(createAnotherCategoryFuture, Duration.Inf)
 
         val returnedCategorySeqFuture: Future[Seq[Category]] = categories.getAllCategories
@@ -254,7 +249,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Categories.getCategoryByName should return no category if it does not exist") {
         val categories: Categories = new Categories()
 
-        val createCategoryFuture: Future[Unit] = categories.createCategory("toto")
+        val createCategoryFuture = categories.createCategory("toto")
         Await.ready(createCategoryFuture, Duration.Inf)
 
         val returnedCategoryFuture: Future[Option[Category]] = categories.getCategoryByName("somebody-else")
@@ -266,7 +261,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Categories.getCategoryByName should return a category") {
         val categories: Categories = new Categories()
 
-        val createCategoryFuture: Future[Unit] = categories.createCategory("toto")
+        val createCategoryFuture = categories.createCategory("toto")
         Await.ready(createCategoryFuture, Duration.Inf)
 
         val returnedCategoryFuture: Future[Option[Category]] = categories.getCategoryByName("toto")
@@ -277,4 +272,69 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
             case None => fail("Should return a user.")
         }
     }
+
+    test("Carts.createCart should fail if related user doesn't exist") {
+        val carts = new Carts()
+        val createCartFuture = carts.createCart("INCORRECTID")
+        Await.ready(createCartFuture, Duration.Inf)
+        createCartFuture.value match {
+            case Some(Failure(exc: UserDoesntExistException)) => {
+                exc.getMessage should equal ("Cannot create cart, there is no user with ID 'INCORRECTID'.")
+            }
+            case _ => fail("The future should fail.")
+        }
+    }
+
+    test("Carts.createCart should create a new cart linked to existing user") {
+        val carts = new Carts()
+        val users = new Users()
+
+        val initialAllCartFuture = carts.getAllCarts
+        var initialAllCarts: Seq[Cart] = Await.result(initialAllCartFuture, Duration.Inf)
+        // Create user
+        val createUserFuture = users.createUser("toto")
+        Await.ready(createUserFuture, Duration.Inf)
+        val getUserFuture = users.getUserByUsername("toto")
+        val returnedUser = Await.result(getUserFuture,Duration.Inf)
+        //Create cart
+        val createCartFuture = carts.createCart(returnedUser.last.userId)
+        Await.ready(createCartFuture, Duration.Inf)
+        // Check that the future succeeds
+        createCartFuture.value should be(Some(Success(())))
+
+        val getAllCartFuture = carts.getAllCarts
+        var allCarts: Seq[Cart] = Await.result(getAllCartFuture, Duration.Inf)
+
+        allCarts.length should be(initialAllCarts.length+1)
+        allCarts.last.userId should be(returnedUser.last.userId)
+    }
+
+    test("Carts.getCartWithProducts should return a cart with a seq of products") {
+        val carts = new Carts()
+        val users = new Users()
+        val products = new Products()
+
+        // Create user
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+        // Create cart
+        val createCartFuture = carts.createCart(newUserId)
+        Await.ready(createCartFuture, Duration.Inf)
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+        // Create product
+        val createProductFuture = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+        // Add product to cart
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 2)
+
+        val getCartWithProductFuture = carts.getCartWithProducts(newCartId)
+        val cartWithProduct = Await.result(getCartWithProductFuture,Duration.Inf)
+        cartWithProduct.cart.cartId.last should be(newCartId)
+        cartWithProduct.products.last.product.productId should be(newProductId)
+        cartWithProduct.products.last.product.productName should be("Chaise")
+        cartWithProduct.products.last.quantity should be(2)
+    }
+
 }
