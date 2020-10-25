@@ -28,7 +28,7 @@ trait ProductRoutes extends LazyLogging {
   def addProduct(
       products: Products,
       fields: Map[String, String]
-  ): Future[HttpResponse] = {
+  ) = {
     logger.info("I got a request to add a Product.")
 
     var category: Option[Category] = None
@@ -46,14 +46,14 @@ trait ProductRoutes extends LazyLogging {
       }
     }
 
-    val productCreation: Future[Unit] = products.createProduct(
+    val productCreation = products.createProduct(
       productName = fields.get("name").orNull,
       productPrice = fields.get("price").map(f => f.toDouble).get,
       productDetail = fields.get("detail").orNull,
       category = category
     )
     productCreation
-      .map(_ => {
+      .map(productId => {
         HttpResponse(
           StatusCodes.OK,
           entity = "Product successfully added to the marketplace."

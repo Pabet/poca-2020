@@ -51,7 +51,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
     test("Route POST /register should create a new user") {
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto").returning(Future(())).once()
+        (mockUsers.createUser _).expects("toto").returning(Future("anyString"))
         val mockProducts = mock[Products]
         val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 
@@ -140,7 +140,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val mockProducts = mock[Products]
         
         val category = Some(Category(None, "testCategory"))
-        (mockProducts.createProduct _).expects("test", 1, "test details", category).returning(Future(())).once()
+        (mockProducts.createProduct _).expects("test", 1, "test details", category).returning(Future("anyString"))
 
         val routesUnderTest = new Routes(mockUsers,mockProducts).routes
 

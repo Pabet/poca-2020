@@ -51,7 +51,7 @@ trait UserRoutes extends LazyLogging {
 
     fields.get("username") match {
       case Some(username) => {
-        val userCreation: Future[Unit] = users.createUser(username = username)
+        val userCreation = users.createUser(username = username)
 
         userCreation
           .map(_ => {

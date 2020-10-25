@@ -13,6 +13,8 @@ case class User(userId: String, username: String, userPassword: String = "", use
 
 final case class UserAlreadyExistsException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause)
+final case class UserDoesntExistException(private val message: String="", private val cause: Throwable=None.orNull)
+  extends Exception(message, cause)
 
 class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
     def userId = column[String]("userId", O.PrimaryKey)
@@ -27,7 +29,7 @@ class Users {
     val db = MyDatabase.db
     val users = TableQuery[UsersTable]
 
-    def createUser(username: String): Future[Unit] = {
+    def createUser(username: String) = {
         val existingUsersFuture = getUserByUsername(username)
 
         existingUsersFuture.flatMap(existingUser => {
@@ -37,8 +39,8 @@ class Users {
                 val dbio: DBIO[Int] = users += newUser
                 var resultFuture: Future[Int] = db.run(dbio)
 
-                // We do not care about the Int value
-                resultFuture.map(_ => ())
+                // We do not care about the Int value but we would like to have the id
+                resultFuture.map(_ => userId)
             } else {
                 throw new UserAlreadyExistsException(s"A user with username '$username' already exists.")
             }
@@ -55,6 +57,20 @@ class Users {
                 case 0 => None
                 case 1 => Some(userList.head)
                 case _ => throw new InconsistentStateException(s"Username $username is linked to several users in database!")
+            }
+        })
+    }
+
+    def getUserById(userId: String): Future[Option[User]] = {
+        val query = users.filter(_.userId === userId)
+
+        val userListFuture = db.run(query.result)
+
+        userListFuture.map((userList) => {
+            userList.length match {
+                case 0 => None
+                case 1 => Some(userList.head)
+                case _ => throw new InconsistentStateException(s"User ID $userId is linked to several users in database!")
             }
         })
     }
