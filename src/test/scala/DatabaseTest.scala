@@ -337,4 +337,36 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         cartWithProduct.products.last.quantity should be(2)
     }
 
+    test("Carts.getAllCartsForUser should return only carts of specific user"){
+        val carts = new Carts()
+        val users = new Users()
+
+        val userId = Await.result(users.createUser("toto"),Duration.Inf)
+        val secondUserId = Await.result(users.createUser("tata"),Duration.Inf)
+
+        carts.createCart(userId)
+        carts.createCart(userId)
+        val user1Carts = Await.result(carts.getAllCartsForUser(userId),Duration.Inf)
+        val user2Carts = Await.result(carts.getAllCartsForUser(secondUserId),Duration.Inf)
+
+        user1Carts.length should be(2)
+        user2Carts.length should be(0)
+    }
+
+    test("Carts.getLastCartForUser should return only the last card by cart date"){
+        val carts = new Carts()
+        val users = new Users()
+
+        val userId = Await.result(users.createUser("toto"),Duration.Inf)
+
+        carts.createCart(userId)
+        carts.createCart(userId)
+        val userCarts = Await.result(carts.getAllCartsForUser(userId),Duration.Inf)
+        val userLastCart = Await.result(carts.getLastCartForUser(userId),Duration.Inf)
+
+        for(cart <- userCarts){
+            userLastCart.cartDate should be >= cart.cartDate
+        }
+    }
+
 }

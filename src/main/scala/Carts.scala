@@ -68,6 +68,20 @@ class Carts {
     })
   }
 
+  def getAllCartsForUser(userId: String)= {
+    val cartListFuture = db.run(cartsTable.filter(_.userId === userId).result)
+    cartListFuture.map((cartList) => {
+      cartList
+    })
+  }
+
+  def getLastCartForUser(userId: String) ={
+    val cartListFuture = db.run(cartsTable.filter(_.userId === userId).sortBy(_.cartDate).result)
+    cartListFuture.map((cartList) => {
+      cartList.last
+    })
+  }
+
   // Return a Future of a CarWithProduct
   def getCartWithProducts(cartId: Int) = {
     val cartWithProductsFuture = db.run(cartsTable.filter(_.cartId === cartId).result)
