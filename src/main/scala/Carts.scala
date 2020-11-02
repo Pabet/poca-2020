@@ -3,19 +3,26 @@ package poca
 import java.time.LocalDateTime
 
 import joins.{CartProductDTO, CartProductLine, JCartProductTable}
-
-import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 case class Cart(cartId: Option[Int], userId : String, cartDate: LocalDateTime)
 case class CartWithProducts(cart : Cart, products : Seq[CartProductLine])
 
 final case class CartDoesntExistException(private val message: String="", private val cause: Throwable=None.orNull)
   extends Exception(message, cause)
-
+final case class CartIsEmptyException(message: String, private val cause: Throwable = None.orNull)
+  extends Exception(message, cause)
 final case class CartProductJointError(private val message: String = "", private val cause: Throwable = None.orNull)
   extends Exception(message, cause)
+
+final case class RemoveProductFromCartException(message: String, private val cause: Throwable = None.orNull)
+  extends Exception(message, cause)
+final case class RemoveAllProductFromCartException(message: String, private val cause: Throwable = None.orNull)
+  extends Exception(message, cause)
+
 
 class CartsTable(tag: Tag) extends Table[(Cart)](tag, "carts") {
   def cartId = column[Int]("cartId", O.PrimaryKey, O.AutoInc)
@@ -110,7 +117,7 @@ class Carts {
     })
   }
 
-  def addProductToCart(cartId : Int, productId : String, productQuantity: Int): Unit ={
+  def addProductToCart(cartId : Int, productId : String, productQuantity: Int): Future[Unit] ={
     val products = new Products()
     val existingCartFuture = getCartById(cartId)
     existingCartFuture.flatMap(
@@ -134,4 +141,116 @@ class Carts {
     )
   }
 
+  def getProductQuantityFromCart(cartId: Int, productId: String): Future[Seq[Int]] = {
+    val products = new Products()
+    val existingCartFuture = getCartById(cartId)
+    existingCartFuture.flatMap(
+      existingCart => {
+        if (existingCart.isEmpty) {
+          throw CartDoesntExistException(s"Cannot remove product from cart since there is no cart with ID '$cartId'.")
+        } else {
+          val existingProductFuture = products.getProductById(productId)
+          existingProductFuture.flatMap(existingProduct => {
+            if (existingProduct.isEmpty) {
+              throw ProductDoesntExistException(s"Cannot remove product from cart since there is no product with ID '$productId'.")
+            } else {
+              val quantity = jCartProductTable.filter(cart =>
+                  (cart.cartId === cartId) &&
+                    (cart.productId === productId)
+              ).map(_.productQuantity)
+              db.run(quantity.result)
+            }
+          })
+        }
+      })
+  }
+
+  def removeProductFromCart(cartId: Int, productId: String): Future[Unit] = {
+    val products = new Products()
+    val existingCartFuture = getCartById(cartId)
+    existingCartFuture.flatMap(
+      existingCart => {
+        if (existingCart.isEmpty) {
+          throw CartDoesntExistException(s"Cannot remove product from cart since there is no cart with ID '$cartId'.")
+        } else {
+          val existingProductFuture = products.getProductById(productId)
+          existingProductFuture.flatMap(existingProduct => {
+            if (existingProduct.isEmpty) {
+              throw ProductDoesntExistException(s"Cannot remove product from cart since there is no product with ID '$productId'.")
+            } else {
+              val removeProduct = for {
+                jcp <- jCartProductTable
+                if (jcp.productId === productId) && (jcp.cartId === cartId)
+              } yield jcp.productQuantity
+              val quantity = getProductQuantityFromCart(cartId, productId)
+              quantity.map(e => {
+                val updateAction = removeProduct.update(e.last - 1)
+                val resultFuture: Future[Int] = db.run(updateAction)
+                resultFuture.onComplete {
+                  case Success(value) => println(s"Result: ${value}")
+                  case Failure(value) =>
+                    throw RemoveProductFromCartException(
+                      s"Query failed: ${value}"
+                    )
+                }
+              })
+            }
+          })
+        }
+      }
+    )
+  }
+
+  def removeAllProductFromCart(cartId: Int): Future[Unit] = {
+    val existingCartFuture = getCartById(cartId)
+    existingCartFuture.flatMap(
+      existingCart => {
+        if (existingCart.isEmpty) {
+          throw CartDoesntExistException(s"Cannot remove product from cart since there is no cart with ID '$cartId'.")
+        } else {
+          getCartWithProducts(cartId)
+            .map(lines => {
+              if (lines.products.isEmpty) {
+                throw CartIsEmptyException(s"Cart is empty")
+              } else {
+                val removeAllProduct = jCartProductTable
+                  .filter(_.cartId === cartId).delete
+                val f: Future[Int] = db.run(removeAllProduct)
+                f.onComplete {
+                  case Success(value) => println(s"Result: ${value}")
+                  case Failure(value) =>
+                    throw RemoveAllProductFromCartException(
+                      s"Query failed: ${value}"
+                    )
+                }
+              }
+            })
+        }
+      })
+  }
+
+  def getCartAmount(cartId: Int): Future[Future[Seq[Long]]] = {
+    val existingCartFuture = getCartById(cartId)
+    existingCartFuture.flatMap(
+      existingCart =>
+        if (existingCart.isEmpty) {
+          throw CartDoesntExistException(s"Cannot get amount from cart since there is no cart with ID '$cartId'.")
+        } else {
+          getCartWithProducts(cartId)
+            .map(lines => {
+              if (lines.products.isEmpty) {
+                throw CartIsEmptyException(s"Cart is empty.")
+              } else {
+                val monadicCrossJoin = for {
+                  p <- productsTable
+                  jcp <- jCartProductTable
+                  if (p.productId === jcp.productId) && (jcp.cartId === cartId)
+                } yield p.productPrice
+                monadicCrossJoin.sum
+                val f: Future[Seq[Double]] = db.run(monadicCrossJoin.result)
+                f.map(_.map(_.longValue))
+              }
+            })
+        })
+  }
 }
