@@ -1,17 +1,18 @@
 
 
-import scala.util.{Failure, Success}
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.meta._
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
-import org.scalatest.funsuite.AnyFunSuite
-import com.typesafe.scalalogging.LazyLogging
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import ch.qos.logback.classic.{Level, Logger}
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 import org.slf4j.LoggerFactory
-import poca.{Cart, Carts, Categories, Category, CategoryDoesntExistsException, MyDatabase, Product, Products, Routes, RunMigrations, User, UserAlreadyExistsException, UserDoesntExistException, Users}
+import poca.MyDatabase.executionContext
+import poca._
+import slick.jdbc.PostgresProfile.api._
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success}
 
 
 class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with BeforeAndAfterEach with LazyLogging {
@@ -367,6 +368,125 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         for(cart <- userCarts){
             userLastCart.cartDate should be >= cart.cartDate
         }
+    }
+
+    test("Carts.getProductQuantityFromCart should return quantity of specified product from cart") {
+        val carts = new Carts()
+        val users = new Users()
+        val products = new Products()
+
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+
+        val createCartFuture = carts.createCart(newUserId)
+        Await.ready(createCartFuture, Duration.Inf)
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
+        Await.ready(addProductFuture, Duration.Inf)
+
+        val getQuantityProductFuture = carts.getProductQuantityFromCart(cartId = newCartId, productId = newProductId)
+        val quantityProduct = Await.result(getQuantityProductFuture, Duration.Inf)
+
+        quantityProduct.isEmpty should be (false)
+        quantityProduct.last > 0 should be (true)
+        quantityProduct.last should be (3)
+    }
+
+    test("Carts.removeProductFromCart should remove product from cart") {
+        val carts = new Carts()
+        val users = new Users()
+        val products = new Products()
+
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+
+        val createCartFuture = carts.createCart(newUserId)
+        Await.ready(createCartFuture, Duration.Inf)
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
+        Await.ready(addProductFuture, Duration.Inf)
+
+        val getCartProductsFuture = carts.getCartWithProducts(newCartId)
+        Await.ready(getCartProductsFuture, Duration.Inf)
+
+        val removedProduct = carts.removeProductFromCart(cartId = newCartId, productId = newProductId)
+        Await.ready(removedProduct, Duration.Inf)
+
+        val getNewCartProductFuture = carts.getCartWithProducts(newCartId)
+        val newCartWithProduct = Await.result(getNewCartProductFuture, Duration.Inf)
+        newCartWithProduct.products.last.quantity should be (2)
+    }
+
+    test("Carts.removeAllProductFromCart should return empty cart") {
+        val carts = new Carts()
+        val users = new Users()
+        val products = new Products()
+
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+
+        val createCartFuture = carts.createCart(newUserId)
+        Await.ready(createCartFuture, Duration.Inf)
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
+        Await.ready(addProductFuture, Duration.Inf)
+
+        val getCartProductsFuture = carts.getCartWithProducts(newCartId)
+        Await.ready(getCartProductsFuture, Duration.Inf)
+
+        val removeAllProductFuture = carts.removeAllProductFromCart(cartId = newCartId)
+        Await.ready(removeAllProductFuture, Duration.Inf)
+
+        val getEmptyCartProductFuture = carts.getCartWithProducts(newCartId)
+        val newEmptyCart = Await.result(getEmptyCartProductFuture, Duration.Inf)
+
+        newEmptyCart.products.isEmpty should be (true)
+    }
+
+    test("Carts.getCartAmount should return total amount of cart") {
+        val carts = new Carts()
+        val users = new Users()
+        val products = new Products()
+
+        val createUserFuture = users.createUser("toto")
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+
+        val createCartFuture = carts.createCart(newUserId)
+        Await.ready(createCartFuture, Duration.Inf)
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
+        Await.ready(addProductFuture, Duration.Inf)
+
+        val getCartAmountFuture = carts.getCartAmount(newCartId)
+        val cartAmount = Await.result(getCartAmountFuture, Duration.Inf)
+
+        cartAmount.map(_.isEmpty should be (false))
+        cartAmount.map(_.last >= 0 should be (true))
+        cartAmount.map(_.last should be (74.97))
     }
 
 }
