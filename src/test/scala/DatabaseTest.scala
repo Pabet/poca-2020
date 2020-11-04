@@ -1,5 +1,8 @@
 
 
+
+import java.util.UUID
+
 import ch.qos.logback.classic.{Level, Logger}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
@@ -440,10 +443,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createCartFuture = carts.createCart(newUserId)
         Await.ready(createCartFuture, Duration.Inf)
         val getAllCartsFuture = carts.getAllCarts
-        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val allCarts = Await.result(getAllCartsFuture, Duration.Inf)
         val newCartId = allCarts.last.cartId.last
 
-        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val createProductFuture = products.createProduct("Chaise", 24.99, "chaise ikea", None)
         val newProductId = Await.result(createProductFuture, Duration.Inf)
 
         val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
@@ -458,8 +461,47 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val getEmptyCartProductFuture = carts.getCartWithProducts(newCartId)
         val newEmptyCart = Await.result(getEmptyCartProductFuture, Duration.Inf)
 
-        newEmptyCart.products.isEmpty should be (true)
+        newEmptyCart.products.isEmpty should be(true)
     }
+
+    test("Carts.cartContainsProduct should return true if $cart contains $product, false otherwise"){
+        //create tables
+        val carts = new Carts()
+        val products = new Products()
+        val users = new Users()
+
+        //create user
+        val userId = Await.result(users.createUser("testguy"), Duration.Inf)
+        val createCartFuture = carts.createCart(userId)
+        Await.ready(createCartFuture, Duration.Inf)
+
+        //create cart
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture, Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        //create product
+        val createProductFuture = products.createProduct("Pont Neuf",1607.00,"pont, très joli",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        // Add product to cart
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 1)
+
+        val getCartWithProductFuture = carts.getCartWithProducts(newCartId)
+        val cartWithProduct = Await.result(getCartWithProductFuture,Duration.Inf)
+
+        //cart contains added product
+        val cartContainsProduct = Await.result(carts.cartContainsProduct(cartWithProduct.cart.cartId.last, cartWithProduct.products.last.product.productId), Duration.Inf)
+        cartContainsProduct should be (true)
+
+        //cart doesn't contain other product
+        val randomProductId = UUID.randomUUID.toString
+        if (randomProductId != newProductId) {
+            val cartDoesntContainRandomProduct = Await.result(carts.cartContainsProduct(cartWithProduct.cart.cartId.last, randomProductId), Duration.Inf)
+            cartDoesntContainRandomProduct should be (false)
+        }
+    }
+
 
     test("Carts.getCartAmount should return total amount of cart") {
         val carts = new Carts()
@@ -472,10 +514,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createCartFuture = carts.createCart(newUserId)
         Await.ready(createCartFuture, Duration.Inf)
         val getAllCartsFuture = carts.getAllCarts
-        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val allCarts = Await.result(getAllCartsFuture, Duration.Inf)
         val newCartId = allCarts.last.cartId.last
 
-        val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
+        val createProductFuture = products.createProduct("Chaise", 24.99, "chaise ikea", None)
         val newProductId = Await.result(createProductFuture, Duration.Inf)
 
         val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
@@ -484,9 +526,44 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val getCartAmountFuture = carts.getCartAmount(newCartId)
         val cartAmount = Await.result(getCartAmountFuture, Duration.Inf)
 
-        cartAmount.map(_.isEmpty should be (false))
-        cartAmount.map(_.last >= 0 should be (true))
-        cartAmount.map(_.last should be (74.97))
+        cartAmount.map(_.isEmpty should be(false))
+        cartAmount.map(_.last >= 0 should be(true))
+        cartAmount.map(_.last should be(74.97))
+    }
+
+    test("Carts.ChangeAmountOfProductInCart changes product quantity correctly"){
+        val carts = new Carts()
+        val products = new Products()
+        val users = new Users()
+
+        //create user
+        val userId = Await.result(users.createUser("testguy"), Duration.Inf)
+        val createCartFuture = carts.createCart(userId)
+        Await.ready(createCartFuture, Duration.Inf)
+
+        //create cart
+        val getAllCartsFuture = carts.getAllCarts
+        val allCarts = Await.result(getAllCartsFuture,Duration.Inf)
+        val newCartId = allCarts.last.cartId.last
+
+        //create product
+        val createProductFuture = products.createProduct("Pont de la Concorde",1792.00,"un autre pont",None)
+        val newProductId = Await.result(createProductFuture, Duration.Inf)
+
+        // Add product to cart
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 2)
+        // and change the amount of product
+        val changedAmount = Await.ready(carts.changeAmountOfProductInCart(cartId = newCartId, productId = newProductId, newQuantity = 3), Duration.Inf)
+        //try to change amount of non existing product
+        //val testFuture = carts.changeAmountOfProductInCart(cartId = 23, productId = newProductId, newQuantity = 3)
+
+        val getCartWithProductFuture = carts.getCartWithProducts(newCartId)
+        val cart = Await.result(getCartWithProductFuture, Duration.Inf)
+
+        cart.products.last.quantity should be (3)
+
+
+
     }
 
 }

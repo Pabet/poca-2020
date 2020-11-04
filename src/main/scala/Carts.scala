@@ -8,13 +8,21 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+
 case class Cart(cartId: Option[Int], userId : String, cartDate: LocalDateTime)
 case class CartWithProducts(cart : Cart, products : Seq[CartProductLine])
 
 final case class CartDoesntExistException(private val message: String="", private val cause: Throwable=None.orNull)
   extends Exception(message, cause)
+
 final case class CartIsEmptyException(message: String, private val cause: Throwable = None.orNull)
   extends Exception(message, cause)
+
+
+final case class CartDoesntContainProductException(private val message: String="", private val cause: Throwable=None.orNull)
+  extends Exception(message, cause)
+
+
 final case class CartProductJointError(private val message: String = "", private val cause: Throwable = None.orNull)
   extends Exception(message, cause)
 
@@ -200,6 +208,47 @@ class Carts {
       }
     )
   }
+  def cartContainsProduct(cartId: Int, productId: String): Future[Boolean]={
+    val cartContainsFuture = db.run(jCartProductTable.filter(p=>p.cartId===cartId && p.productId===productId).result)
+    cartContainsFuture.map(cartEntry => {
+      cartEntry.length match{
+        case 0 => false
+        case _ if (cartEntry.last.productQuantity >= 1) =>  true
+      }
+    })
+  }
+
+
+  def changeAmountOfProductInCart(cartId: Int, productId: String, newQuantity: Int): Future[Unit]={
+    val products = new Products()
+    val existingCartFuture = getCartById(cartId)
+    existingCartFuture.flatMap(
+      existingCard => {
+        if(existingCard.isEmpty){
+          throw new CartDoesntExistException(s"Cannot add product to cart, there is no cart with ID '$cartId'.")
+        }else{
+          val existingProductFuture = products.getProductById(productId)
+          existingProductFuture.flatMap( existingProduct => {
+            if (existingProduct.isEmpty) {
+              throw new ProductDoesntExistException(s"Cannot add product to cart, there is no product with ID '$productId'.")
+            } else {
+              val cartContainsProductFuture = cartContainsProduct(cartId, productId)
+              cartContainsProductFuture map{
+                isIn => if (isIn){
+                  val updateProductAmountQuery = jCartProductTable.filter(p => p.productId === productId && p.cartId === cartId).map(_.productQuantity).update(newQuantity)
+                  var resultFuture = db.run(updateProductAmountQuery)
+                  //resultFuture.map(_ => ())
+                }else{
+                  throw new CartDoesntContainProductException(s"cart ('$cartId') doesn't contain the product with id '$productId'")
+                }
+              }
+
+            }
+          })
+        }
+      }
+    )
+  }
 
   def removeAllProductFromCart(cartId: Int): Future[Unit] = {
     val existingCartFuture = getCartById(cartId)
@@ -253,4 +302,6 @@ class Carts {
             })
         })
   }
+
+
 }

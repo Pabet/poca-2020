@@ -110,4 +110,14 @@ trait ProductRoutes extends LazyLogging {
     productFuture.map(product => html.purchase(product))
   }
 
+
+  /*
+  TODO add the html template for carts and call it here
+  def getUserCarts(cart: Carts): Future[HtmlFormat.Appendable] = {
+    logger.info(("I got a request to show the user carts"))
+    val userCartsFuture: Future[Seq[CartsTable#TableElementType]] = cart.getAllCarts
+    userCartsFuture.map(cartSeq => html.carts(cartSeq))
+  }
+  */
+
 }
