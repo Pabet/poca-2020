@@ -20,7 +20,7 @@ import play.twirl.api.HtmlFormat
 import scala.concurrent.{ExecutionContext, Future}
 import TwirlMarshaller._
 
-class Routes(users: Users, products: Products)
+class Routes(users: Users, products: Products, carts: Carts)
     extends UserRoutes
     with ProductRoutes {
 
@@ -77,6 +77,13 @@ class Routes(users: Users, products: Products)
           complete(super[ProductRoutes].buyProduct(products, fields))
         }
       }
+      /* TODO implement when ProductRoutes.getUserCarts() is implemented
+      path("carts") {
+        get {
+          complete(super[ProductRoutes].getUserCarts(carts))
+        }
+      }
+       */
     )
 
 }
