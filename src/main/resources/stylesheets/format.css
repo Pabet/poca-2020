@@ -1,0 +1,47 @@
+body{font-family:Helvetica,Arial,sans-serif;color:black;
+width:1090px;background-attachment:scroll;margin:0px auto;
+background-color:SILVER;background-repeat:no-repeat;}
+div#formulaire{
+	color:black; font-size:20px;background-color:WHITE;
+	width:60%; margin:auto auto; margin-top:10%;
+}
+h1#Titre_Centre{
+	text-align:center;
+}
+
+p#txt_centre{
+	text-align:center;font-size:20px;
+}
+
+label#nom_champs{
+	margin-left:2%; font-size:25px; font-weight:bold;
+}
+
+input#input_txt{
+	margin-left:10px;
+}
+
+input#input_pswrd{
+	margin-left:1px;
+}
+
+input#connexion{
+	margin-left:30%; width:30%; margin-top:2%; margin-bottom:3%;
+}
+
+th#info_product{
+	background-color:GOLD;font-size:20px; font-weight:bold; width:25%; margin: auto auto;
+}
+
+td#val_product{
+	background-color:WHITE;width:25%;
+}
+
+div#Recap{
+	color:black; font-size:15px;background-color:WHITE;
+	width:95%;margin:auto auto;
+}
+
+ul#usr_list{
+	background-color:WHITE;width:98%;
+}

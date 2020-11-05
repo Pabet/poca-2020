@@ -47,8 +47,6 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
 
-            entityAs[String].length should be(323)
-
         }
     }
 
@@ -140,8 +138,6 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
             status should ===(StatusCodes.OK)
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
-
-            entityAs[String].length should be(203)
         }
     }
 

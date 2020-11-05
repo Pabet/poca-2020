@@ -3,21 +3,25 @@
 <!doctype html>
 <html>
 
-<head></head>
+	<head>
+		<title>Product</title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="format.css" /> 
+	</head>
 
-<h1>This is like some nice Amazon rip off</h1>
+<h1 id="Titre_Centre">This is like some nice Amazon rip off</h1>
 
 <table style="width:100%">
     <tr>
-        <th>product name</th>
-        <th>product price</th>
-        <th>product detail</th>
+        <th id="info_product">product name</th>
+        <th id="info_product">product price</th>
+        <th id="info_product">product detail</th>
         <th></th>
     </tr>
     @for(product <- products) { <tr>
-        <td>@product.productName</td>
-        <td>@product.productPrice</td>
-        <td>@product.productDetail</td>
+        <td id="val_product">@product.productName</td>
+        <td id="val_product">@product.productPrice</td>
+        <td id="val_product">@product.productDetail</td>
         <td>
             <form action=/purchase method="post">
                 <input name="id" type="hidden" value=@product.productId />
