@@ -2,11 +2,15 @@
 
 <!doctype html>
 <html>
-    <head></head>
+    <head>
+		<title>Users List</title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="format.css" /> 
+	</head>
 
-    <h1>List of registred users</h1>
+    <h1 id="Titre_Centre">List of registred users</h1>
 
-    <ul>
+    <ul id="usr_list">
     @for(user <- users) {
         <li>@user.username</li>
     }

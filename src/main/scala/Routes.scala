@@ -14,6 +14,7 @@ import akka.http.scaladsl.server.Directives.{
   path,
   post
 }
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
@@ -37,6 +38,10 @@ class Routes(users: Users, products: Products, carts: Carts)
 
   val routes: Route =
     concat(
+      path("format.css") {
+        logger.info("I got a request for css resource.")
+        getFromResource("stylesheets/format.css")
+      },
       path("hello") {
         get {
           complete(getHello())
