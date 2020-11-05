@@ -1,6 +1,3 @@
-
-
-
 import java.util.UUID
 
 import ch.qos.logback.classic.{Level, Logger}
@@ -46,7 +43,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users: Users = new Users()
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val getUsersFuture: Future[Seq[User]] = users.getAllUsers
@@ -55,15 +52,39 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         allUsers.length should be(initialAllUsers.length+1)
         allUsers.last.username should be("toto")
         allUsers.last.userId should be(newUserId)
+        allUsers.last.roleId should be(None)
+    }
+
+    test("Users.createUser should create a new user with the id of the role") {
+        val users: Users = new Users()
+        val initialUsersFuture = users.getAllUsers
+        var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
+
+        val roles: Roles = new Roles()
+        val createRoleFuture = roles.createRole("awesomeRole")
+
+        val createUserFuture = users.createUser("toto", Some(Role(None, "awesomeRole")))
+        val newUserId = Await.result(createUserFuture, Duration.Inf)
+
+        val getRoleFuture = roles.getRoleByName("awesomeRole")
+        val returnedRole = Await.result(getRoleFuture, Duration.Inf)
+
+        val getUsersFuture: Future[Seq[User]] = users.getAllUsers
+        var allUsers: Seq[User] = Await.result(getUsersFuture, Duration.Inf)
+
+        allUsers.length should be(initialAllUsers.length+1)
+        allUsers.last.username should be("toto")
+        allUsers.last.userId should be(newUserId)
+        allUsers.last.roleId should be(returnedRole.last.roleId)
     }
 
     test("Users.createUser returned future should fail if the user already exists") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createDuplicateUserFuture = users.createUser("toto")
+        val createDuplicateUserFuture = users.createUser("toto", None)
         Await.ready(createDuplicateUserFuture, Duration.Inf)
 
         createDuplicateUserFuture.value match {
@@ -74,10 +95,24 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         }
     }
 
+    test("Users.createUser returned future should fail if the role does not exists") {
+        val users: Users = new Users()
+
+        val createUserFuture = users.createUser("toto", Some(Role(None, "DoesNotExists")))
+        Await.ready(createUserFuture, Duration.Inf)
+
+        createUserFuture.value match {
+            case Some(Failure(exc: RoleDoesntExistsException)) => {
+                exc.getMessage should equal ("There is no role named 'DoesNotExists'.")
+            }
+            case _ => fail("The future should fail.")
+        }
+    }
+
     test("Users.getUserByUsername should return no user if it does not exist") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("somebody-else")
@@ -89,7 +124,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getUserByUsername should return a user") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("toto")
@@ -101,22 +136,105 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         }
     }
 
+    test("Users.getUserByUsernameWithRole should return a tuple (User,Role)") {
+        val users: Users = new Users()
+
+        val roles : Roles = new Roles()
+        val createRoleFuture = roles.createRole("awesomeRole")
+        Await.ready(createRoleFuture, Duration.Inf)
+
+        val createUserFuture = users.createUser("toto",Some(Role(None,"awesomeRole")))
+        val newUserId = Await.ready(createUserFuture, Duration.Inf)
+
+        val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
+        val returnedUserSeq: Seq[User] = Await.result(returnedUserSeqFuture, Duration.Inf)
+
+        val userWithRole = Await.result(users.getUserByUsernameWithRole("toto"),Duration.Inf)
+        userWithRole.last.role.roleName should be("awesomeRole")
+        userWithRole.last.user.username should be("toto")
+    }
+
     test("Users.getAllUsers should return a list of users") {
         val users: Users = new Users()
 
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
 
-        val createUserFuture = users.createUser("riri")
+        val createUserFuture = users.createUser("riri", None)
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createAnotherUserFuture = users.createUser("fifi")
+        val createAnotherUserFuture = users.createUser("fifi", None)
         Await.ready(createAnotherUserFuture, Duration.Inf)
 
         val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
         val returnedUserSeq: Seq[User] = Await.result(returnedUserSeqFuture, Duration.Inf)
 
         returnedUserSeq.length should be(initialAllUsers.length + 2)
+    }
+
+    test("Roles.createRole should create a new role") {
+        val roles: Roles = new Roles()
+
+        val initialRolesFuture = roles.getAllRoles
+        var initialAllRoles = Await.result(initialRolesFuture, Duration.Inf)
+
+        val createRoleFuture = roles.createRole("test")
+        Await.ready(createRoleFuture, Duration.Inf)
+
+        // Check that the future succeeds
+        createRoleFuture.value should be(Some(Success(())))
+
+        val getRolesFuture: Future[Seq[Role]] = roles.getAllRoles
+        var allRoles: Seq[Role] = Await.result(getRolesFuture, Duration.Inf)
+
+        allRoles.length should be(initialAllRoles.length+1)
+        allRoles.last.roleName should be("test")
+        allRoles.last.roleId.last should be(initialAllRoles.last.roleId.last+1)
+    }
+
+    test("Roles.getAllRoles should return a list of roles") {
+        val roles: Roles = new Roles()
+
+        val initialRolesFuture = roles.getAllRoles
+        var initialAllRoles = Await.result(initialRolesFuture, Duration.Inf)
+
+        val createRoleFuture = roles.createRole("test")
+        Await.ready(createRoleFuture, Duration.Inf)
+
+        val createAnotherRoleFuture = roles.createRole("test2")
+        Await.ready(createAnotherRoleFuture, Duration.Inf)
+
+        val getRolesFuture: Future[Seq[Role]] = roles.getAllRoles
+        val allRoles: Seq[Role] = Await.result(getRolesFuture, Duration.Inf)
+
+        allRoles.length should be(initialAllRoles.length + 2)
+    }
+
+    test("Roles.getRoleByName should return no role if it does not exist") {
+        val roles: Roles = new Roles()
+
+        val createRoleFuture = roles.createRole("test")
+        Await.ready(createRoleFuture, Duration.Inf)
+
+        val getRoleFuture: Future[Option[Role]] = roles.getRoleByName("DoesNotExists")
+        val returnedRole: Option[Role] = Await.result(getRoleFuture, Duration.Inf)
+
+        returnedRole should be(None)
+    }
+
+    test("Roles.getRoleByName should return a role") {
+        val roles: Roles = new Roles()
+
+        val createRoleFuture = roles.createRole("test")
+        Await.ready(createRoleFuture, Duration.Inf)
+
+        val getRoleFuture: Future[Option[Role]] = roles.getRoleByName("test")
+        val returnedRole: Option[Role] = Await.result(getRoleFuture, Duration.Inf)
+
+        returnedRole match {
+            case Some(role) => role.roleName should be("test")
+            case None => fail("Should return a role.")
+        }
     }
 
     test("Products.createProduct should create a new product") {
@@ -296,7 +414,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialAllCartFuture = carts.getAllCarts
         var initialAllCarts: Seq[Cart] = Await.result(initialAllCartFuture, Duration.Inf)
         // Create user
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         Await.ready(createUserFuture, Duration.Inf)
         val getUserFuture = users.getUserByUsername("toto")
         val returnedUser = Await.result(getUserFuture,Duration.Inf)
@@ -319,7 +437,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val products = new Products()
 
         // Create user
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
         // Create cart
         val createCartFuture = carts.createCart(newUserId)
@@ -331,10 +449,12 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createProductFuture = products.createProduct("Chaise",300.20,"Chaise confortable pour salle à manger",None)
         val newProductId = Await.result(createProductFuture, Duration.Inf)
         // Add product to cart
-        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 2)
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, productQuantity = 2)
+        Await.result(addProductFuture, Duration.Inf)
 
         val getCartWithProductFuture = carts.getCartWithProducts(newCartId)
         val cartWithProduct = Await.result(getCartWithProductFuture,Duration.Inf)
+
         cartWithProduct.cart.cartId.last should be(newCartId)
         cartWithProduct.products.last.product.productId should be(newProductId)
         cartWithProduct.products.last.product.productName should be("Chaise")
@@ -345,11 +465,11 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val carts = new Carts()
         val users = new Users()
 
-        val userId = Await.result(users.createUser("toto"),Duration.Inf)
-        val secondUserId = Await.result(users.createUser("tata"),Duration.Inf)
+        val userId = Await.result(users.createUser("toto", None),Duration.Inf)
+        val secondUserId = Await.result(users.createUser("tata", None),Duration.Inf)
 
-        carts.createCart(userId)
-        carts.createCart(userId)
+        Await.result(carts.createCart(userId), Duration.Inf)
+        Await.result(carts.createCart(userId), Duration.Inf)
         val user1Carts = Await.result(carts.getAllCartsForUser(userId),Duration.Inf)
         val user2Carts = Await.result(carts.getAllCartsForUser(secondUserId),Duration.Inf)
 
@@ -361,7 +481,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val carts = new Carts()
         val users = new Users()
 
-        val userId = Await.result(users.createUser("toto"),Duration.Inf)
+        val userId = Await.result(users.createUser("toto", None),Duration.Inf)
 
         carts.createCart(userId)
         carts.createCart(userId)
@@ -378,7 +498,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -406,7 +526,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -418,7 +538,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createProductFuture = products.createProduct("Chaise",24.99,"chaise ikea",None)
         val newProductId = Await.result(createProductFuture, Duration.Inf)
 
-        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
+        val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, productQuantity = 3)
         Await.ready(addProductFuture, Duration.Inf)
 
         val getCartProductsFuture = carts.getCartWithProducts(newCartId)
@@ -437,7 +557,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -451,9 +571,6 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
 
         val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 3)
         Await.ready(addProductFuture, Duration.Inf)
-
-        val getCartProductsFuture = carts.getCartWithProducts(newCartId)
-        Await.ready(getCartProductsFuture, Duration.Inf)
 
         val removeAllProductFuture = carts.removeAllProductFromCart(cartId = newCartId)
         Await.ready(removeAllProductFuture, Duration.Inf)
@@ -471,7 +588,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
 
         //create user
-        val userId = Await.result(users.createUser("testguy"), Duration.Inf)
+        val userId = Await.result(users.createUser("testguy", None), Duration.Inf)
         val createCartFuture = carts.createCart(userId)
         Await.ready(createCartFuture, Duration.Inf)
 
@@ -486,6 +603,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
 
         // Add product to cart
         val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 1)
+        Await.result(addProductFuture, Duration.Inf)
 
         val getCartWithProductFuture = carts.getCartWithProducts(newCartId)
         val cartWithProduct = Await.result(getCartWithProductFuture,Duration.Inf)
@@ -508,7 +626,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto")
+        val createUserFuture = users.createUser("toto", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -537,7 +655,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
 
         //create user
-        val userId = Await.result(users.createUser("testguy"), Duration.Inf)
+        val userId = Await.result(users.createUser("testguy", None), Duration.Inf)
         val createCartFuture = carts.createCart(userId)
         Await.ready(createCartFuture, Duration.Inf)
 
@@ -552,6 +670,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
 
         // Add product to cart
         val addProductFuture = carts.addProductToCart(cartId = newCartId, productId = newProductId, 2)
+        Await.ready(addProductFuture, Duration.Inf)
         // and change the amount of product
         val changedAmount = Await.ready(carts.changeAmountOfProductInCart(cartId = newCartId, productId = newProductId, newQuantity = 3), Duration.Inf)
         //try to change amount of non existing product
@@ -561,9 +680,6 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val cart = Await.result(getCartWithProductFuture, Duration.Inf)
 
         cart.products.last.quantity should be (3)
-
-
-
     }
 
 }

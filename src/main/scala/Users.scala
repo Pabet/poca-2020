@@ -1,15 +1,20 @@
 
 package poca
 
-
 import java.time.LocalDateTime
-
-import scala.language.postfixOps
-import scala.concurrent.{ExecutionContext, Future}
-import slick.jdbc.PostgresProfile.api._
 import java.util.UUID
+import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
+import slick.jdbc.PostgresProfile.api._
 
-case class User(userId: String, username: String, userPassword: String = "", userMail: String ="", userLastConnection: LocalDateTime)
+case class User(userId: String,
+				username: String,
+				userPassword: String = "",
+				userMail: String ="",
+				userLastConnection: LocalDateTime,
+				roleId: Option[Int])
+
+case class UserWithRole(user: User, role: Role)
 
 final case class UserAlreadyExistsException(private val message: String="", private val cause: Throwable=None.orNull)
     extends Exception(message, cause)
@@ -22,29 +27,55 @@ class UsersTable(tag: Tag) extends Table[(User)](tag, "users") {
     def userPassword = column[String]("userPassword")
     def userMail = column[String]("userMail")
     def userLastConnection = column[LocalDateTime]("userLastConnection")
-    def * = (userId, username,userPassword,userMail,userLastConnection) <> (User.tupled,User.unapply)
+    def roleId = column[Option[Int]]("userRoleId")
+    def * = (userId, username,userPassword,userMail,userLastConnection, roleId) <> (User.tupled,User.unapply)
+    def role = foreignKey("role", roleId, TableQuery[RolesTable])(_.roleId)
 }
 class Users {
     implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
     val db = MyDatabase.db
     val users = TableQuery[UsersTable]
+    val rolesTable = TableQuery[RolesTable]
 
-    def createUser(username: String) = {
+    def createUser(username: String, role: Option[Role]) = {
+        val userId =  UUID.randomUUID.toString
+
+        def persistNewUser(roleId: Option[Int]) = {
+            val newUser = User(userId, username, "", "", LocalDateTime.now(), roleId)
+            val dbio: DBIO[Int] = users += newUser
+            var resultFuture: Future[Int] = db.run(dbio)
+            resultFuture.map(_ => userId)
+        }
+
         val existingUsersFuture = getUserByUsername(username)
-
         existingUsersFuture.flatMap(existingUser => {
             if (existingUser.isEmpty) {
-                val userId = UUID.randomUUID.toString
-                val newUser = User(userId, username, "", "", LocalDateTime.now())
-                val dbio: DBIO[Int] = users += newUser
-                var resultFuture: Future[Int] = db.run(dbio)
-
-                // We do not care about the Int value but we would like to have the id
-                resultFuture.map(_ => userId)
-            } else {
+            	if(!role.isEmpty) {
+            		val roles: Roles = new Roles()
+            		val roleName = role.last.roleName
+            		val existingRoleFuture = roles.getRoleByName(roleName)
+            		existingRoleFuture.flatMap(existingRole => {
+				        if (existingRole.isEmpty) {
+				        	throw new RoleDoesntExistsException(s"There is no role named '$roleName'.")
+				        }
+				        else {
+				           	persistNewUser(existingRole.last.roleId).map(_ => userId)
+				        }
+				    })
+				}
+            	else {
+                	persistNewUser(None).map(_ => userId)
+                }
+            } 
+            else {
                 throw new UserAlreadyExistsException(s"A user with username '$username' already exists.")
             }
         })
+    }
+
+    def getUserByUsernameWithRole(username: String) = {
+    	val tupledJoin = users filter(_.username===username) join rolesTable on (_.roleId === _.roleId)
+    	db.run(tupledJoin.result).map(_.map(UserWithRole.tupled))
     }
 
     def getUserByUsername(username: String): Future[Option[User]] = {
@@ -59,6 +90,11 @@ class Users {
                 case _ => throw new InconsistentStateException(s"Username $username is linked to several users in database!")
             }
         })
+    }
+
+    def getUserByIdWithRole(userId: String) = {
+    	val tupledJoin = users filter(_.userId===userId) join rolesTable on (_.roleId === _.roleId)
+    	db.run(tupledJoin.result).map(_.map(UserWithRole.tupled))
     }
 
     def getUserById(userId: String): Future[Option[User]] = {

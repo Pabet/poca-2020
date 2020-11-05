@@ -18,6 +18,7 @@ class Migration02AddFakeData(db: Database) extends Migration with LazyLogging{
     def userPassword = column[String]("userPassword")
     def userMail = column[String]("userMail")
     def userLastConnection = column[LocalDateTime]("userLastConnection")
+    def roleId = column[String]("userRoleId")
     def * = (userId, username,userPassword,userMail,userLastConnection)
   }
 

@@ -7,7 +7,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
-import poca.{Carts, Categories, Category, CategoryDoesntExistsException, IncorrectPriceException, MyDatabase, Product, Products, Routes, User, UserAlreadyExistsException, Users}
+import poca.{Carts, Categories, Category, CategoryDoesntExistsException, IncorrectPriceException, MyDatabase, Product, Products, Role, Roles, RoleDoesntExistsException, Routes, User, UserAlreadyExistsException, Users}
 
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
@@ -53,8 +53,9 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     }
 
     test("Route POST /register should create a new user") {
+        val role = Some(Role(None, "testRole"))
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto").returning(Future("anyString"))
+        (mockUsers.createUser _).expects("toto", role).returning(Future("anyString"))
         val mockProducts = mock[Products]
         var mockCarts = mock[Carts]
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
@@ -62,7 +63,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto")).toEntity
+            entity = FormData(("username", "toto"), ("roleName", "testRole")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -75,7 +76,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
     test("Route POST /register should warn the user when username is already taken") {
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto").returns(Future({
+        (mockUsers.createUser _).expects("toto", None).returns(Future({
             throw new UserAlreadyExistsException("")
         })).once()
         val mockProducts = mock[Products]
@@ -97,13 +98,37 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         }
     }
 
+    test("Route POST /register should warn the user when user is not added due to role") {
+        var mockUsers = mock[Users]
+        val role = Some(Role(None, "testRole"))
+        (mockUsers.createUser _).expects("toto", role).returning(Future({
+            throw new RoleDoesntExistsException("")
+        })).once()
+
+        val mockProducts = mock[Products]
+        var mockCarts = mock[Carts]
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts, mockCarts).routes
+
+        val request = HttpRequest(
+            method = HttpMethods.POST,
+            uri = "/register",
+            entity = FormData(("username", "toto"), ("roleName", "testRole")).toEntity
+        )
+        request ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+            contentType should ===(ContentTypes.`text/plain(UTF-8)`)
+            entityAs[String] should ===("Cannot insert user, there is not this role.")
+        }
+    }
+
     test("Route GET /users should display the list of users") {
         var mockUsers = mock[Users]
         var mockCarts = mock[Carts]
         val userList = List(
-            User(username="riri", userId="id1",userPassword="",userMail="",userLastConnection = LocalDateTime.now),
-            User(username="fifi", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now),
-            User(username="lulu", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now)
+            User(username="riri", userId="id1",userPassword="",userMail="",userLastConnection = LocalDateTime.now, roleId = None),
+            User(username="fifi", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now, roleId = None),
+            User(username="lulu", userId="id2",userPassword="",userMail="",userLastConnection = LocalDateTime.now, roleId = None)
         )
         (mockUsers.getAllUsers _).expects().returns(Future(userList)).once()
 
