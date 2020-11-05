@@ -51,8 +51,22 @@ trait UserRoutes extends LazyLogging {
 
     fields.get("username") match {
       case Some(username) => {
-        val userCreation = users.createUser(username = username)
+        var role: Option[Role] = None
+        fields.get("roleName") match {
+          case Some(roleName) => {
+            role = Some(
+              new Role(
+                roleId = None,
+                roleName = roleName
+              )
+            )
+          }
+          case None => {
+            role = None
+          }
+        }
 
+        val userCreation = users.createUser(username = username, role = role)
         userCreation
           .map(_ => {
             HttpResponse(
@@ -67,6 +81,12 @@ trait UserRoutes extends LazyLogging {
                 StatusCodes.OK,
                 entity =
                   s"The username '$username' is already taken. Please choose another username."
+              )
+            }
+            case exc: RoleDoesntExistsException => {
+              HttpResponse(
+                StatusCodes.OK,
+                entity = "Cannot insert user, there is not this role."
               )
             }
           })
