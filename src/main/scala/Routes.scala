@@ -3,17 +3,21 @@ package poca
 import akka.http.scaladsl.server.Directives._
 import java.time.LocalDateTime
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes, HttpMessage}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMessage, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{authenticateBasic, complete, concat, formFieldMap, get, path, post}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.http.scaladsl.client.RequestBuilding.Get
 import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import TwirlMarshaller._
+import akka.http.scaladsl.model.StatusCodes.{Found, Unauthorized}
+import org.graalvm.compiler.core.common.Fields
+
+import scala.concurrent.duration.{Duration, MILLISECONDS}
 
 class Routes(users: Users, products: Products, carts: Carts)
     extends UserRoutes
@@ -28,6 +32,20 @@ class Routes(users: Users, products: Products, carts: Carts)
       ContentTypes.`text/html(UTF-8)`,
       "<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>"
     )
+  }
+
+  def auth(fields: Map[String,String]) ={
+    val username = fields.get("username").orNull
+    val password = fields.get("password").orNull
+    val exist: Future[Option[User]] = users.getUserByUsername(username)
+    exist.map(user => {
+      if (user.isDefined) {
+        val validCredentials = BasicHttpCredentials(username, password)
+        redirect("/products", Found)
+      } else {
+        redirect("/signin", Found)
+      }
+    })
   }
 
   //à modifier
@@ -51,6 +69,11 @@ class Routes(users: Users, products: Products, carts: Carts)
       path("signin") {
         get {
           complete(super[UserRoutes].getSignIn(users))
+        }
+      },
+      path("signin") {
+        (post & formFieldMap) { fields =>
+          Await.result(auth(fields),Duration(1000,MILLISECONDS))
         }
       },
       path("signup") {
@@ -79,7 +102,7 @@ class Routes(users: Users, products: Products, carts: Carts)
         (post & formFieldMap) { fields =>
           complete(super[ProductRoutes].buyProduct(products, fields))
         }
-      },
+      }
       /* TODO implement when ProductRoutes.getUserCarts() is implemented
       path("carts") {
         get {
@@ -87,21 +110,6 @@ class Routes(users: Users, products: Products, carts: Carts)
         }
       }
        */
-      path("auth") {
-        (post & formFieldMap) { fields =>
-          val username = fields.get("username").orNull
-          val password = fields.get("password").orNull
-          val exist: Future[Option[User]] = users.getUserByUsername(username)
-          val ans = exist.map(_.isDefined)
-          if (ans.isCompleted){
-            val validCredentials = BasicHttpCredentials(username, password)
-            Get("/products").addCredentials(validCredentials)
-            complete(super[ProductRoutes].getProducts(products))  
-          } else {
-            complete(super[UserRoutes].getSignIn(users))
-          }
-        }
-      },
     )
 
 }

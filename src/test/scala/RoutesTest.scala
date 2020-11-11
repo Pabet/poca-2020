@@ -8,7 +8,7 @@ import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
 import poca.{Carts, Categories, Category, CategoryDoesntExistsException, IncorrectPriceException, MyDatabase, Product, Products, Role, Roles, RoleDoesntExistsException, Routes, User, UserAlreadyExistsException, Users}
-
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
 
@@ -141,27 +141,6 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         }
     }
 
-    test("Route GET /products should display the list of products") {
-        var mockUsers = mock[Users]
-        var mockProducts = mock[Products]
-        var mockCarts = mock[Carts]
-        val productList = List(
-            Product(productName="p0", productId="id0", productDetail="desc0", productPrice=0, categoryId = None)
-        )
-        (mockProducts.getAllProducts _).expects().returns(Future(productList)).once()
-
-        val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
-
-        val request = HttpRequest(
-            method = HttpMethods.GET,
-            uri = "/products")
-        request ~> routesUnderTest ~> check {
-            status should ===(StatusCodes.OK)
-
-            contentType should ===(ContentTypes.`text/html(UTF-8)`)
-        }
-    }
-
     test("Route POST /products should create a new product") {
         var mockUsers = mock[Users]
         val mockProducts = mock[Products]
@@ -171,12 +150,14 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
+        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
+
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
         )
-        request ~> routesUnderTest ~> check {
+        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Product successfully added to the marketplace.")
@@ -193,12 +174,14 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
+        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
+
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "-1"), ("detail", "test details")).toEntity
         )
-        request ~> routesUnderTest ~> check {
+        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Cannot insert product with a price < 0")
@@ -217,12 +200,14 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
+        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
+
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
         )
-        request ~> routesUnderTest ~> check {
+        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Cannot insert product with a price < 0")
