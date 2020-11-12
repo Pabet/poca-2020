@@ -1,16 +1,21 @@
 package poca
 
 import akka.http.scaladsl.server.Directives._
-
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMessage, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{authenticateBasic, complete, concat, formFieldMap, get, path, post}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.{Route, StandardRoute}
+import com.softwaremill.session._
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import TwirlMarshaller._
 import akka.http.scaladsl.model.StatusCodes.{Found, Unauthorized}
+import auth.PocaSession
+import com.softwaremill.session.CsrfDirectives.{randomTokenCsrfProtection, setNewCsrfToken}
+import com.softwaremill.session.CsrfOptions.checkHeader
+import com.softwaremill.session.SessionDirectives.{invalidateSession, requiredSession, setSession}
+import com.softwaremill.session.SessionOptions.{refreshable, usingCookies}
 
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
@@ -20,6 +25,18 @@ class Routes(users: Users, products: Products, carts: Carts)
 
   override implicit val executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global
+
+  val sessionConfig = SessionConfig.default(
+    "p4NuwW0gCMGuwIVY1475AyIaZGVpFlMAmdtuErxa0Bjn6RDmidwZdv8ufohX3Z6L")
+  implicit val sessionManager = new SessionManager[PocaSession](sessionConfig)
+  implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[PocaSession] {
+    def log(msg: String) = logger.info(msg)
+  }
+
+  def mySetSession(v: PocaSession) = setSession(refreshable, usingCookies, v)
+
+  val myRequiredSession = requiredSession(refreshable, usingCookies)
+  val myInvalidateSession = invalidateSession(refreshable, usingCookies)
 
   def getHello(): HttpEntity.Strict = {
     logger.info("I got a request to greet.")
@@ -52,6 +69,9 @@ class Routes(users: Users, products: Products, carts: Carts)
 
   val routes: Route =
     concat(
+      path("") {
+        redirect("products", Found)
+      },
       path("format.css") {
         logger.info("I got a request for css resource.")
         getFromResource("stylesheets/format.css")
@@ -66,9 +86,20 @@ class Routes(users: Users, products: Products, carts: Carts)
           complete(super[UserRoutes].getSignIn(users))
         }
       },
-      path("signin") {
-        (post & formFieldMap) { fields =>
-          Await.result(auth(fields),Duration(1000,MILLISECONDS))
+      randomTokenCsrfProtection(checkHeader) {
+        path("auth") {
+          logger.info(s"Access path 'auth'")
+          post {
+            entity(as[String]) { body =>
+              logger.info(s"Logging in $body")
+
+              mySetSession(PocaSession(body)) {
+                setNewCsrfToken(checkHeader) { ctx =>
+                  ctx.complete("ok")
+                }
+              }
+            }
+          }
         }
       },
       path("signup") {

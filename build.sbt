@@ -25,6 +25,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "org.postgresql" % "postgresql" % "42.2.16",
   "com.typesafe" % "config" % "1.4.0",
+  "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
+  "com.softwaremill.akka-http-session" %% "jwt"  % "0.5.11",
 )
 
 dockerExposedPorts ++= Seq(8080)
