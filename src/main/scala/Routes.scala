@@ -88,14 +88,14 @@ class Routes(users: Users, products: Products, carts: Carts)
       },
       path("auth") {
         (post & formFieldMap) { fields =>
-          val username = fields.get("login").last
+          val username = fields.get("login").last.toString
           val password = fields.get("password").last
           val credentials = (BasicHttpCredentials(username, password))
           onSuccess(checkCredentials(credentials)) {
             case None => reject(AuthorizationFailedRejection)
             case Some(user) => {
-              val session = PocaSession(username.last.toString)
-              setSession(oneOff, usingHeaders, session) {
+              val session = PocaSession(username)
+              setSession(oneOff, usingCookies, session) {
                 redirect("products", Found)
               }
             }
@@ -124,13 +124,12 @@ class Routes(users: Users, products: Products, carts: Carts)
       },
       path("products") {
         get {
-          complete(super[ProductRoutes].getProducts(products))
-        }
-      },
-      path("products") {
-          (post & formFieldMap) { fields =>
-            complete(super[ProductRoutes].addProduct(products, fields))
+          logger.info(s"Before requiredSession")
+          myRequiredSession { session =>
+            logger.info(s"Username ${session.username}")
+            complete(super[ProductRoutes].getProducts(products))
           }
+        }
       },
       path("purchase") {
         (post & formFieldMap) { fields =>
