@@ -141,6 +141,31 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         }
     }
 
+    test("Route GET /products should display the list of products") {
+        var mockUsers = mock[Users]
+        var mockProducts = mock[Products]
+        var mockCarts = mock[Carts]
+        val productList = List(
+            Product(productName="p0", productId="id0", productDetail="desc0", productPrice=0, categoryId = None)
+        )
+        (mockProducts.getAllProducts _).expects().returns(Future(productList)).once()
+
+        val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
+
+        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
+
+
+        val request = HttpRequest(
+            method = HttpMethods.GET,
+            uri = "/products")
+        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
+            status should ===(StatusCodes.OK)
+
+            contentType should ===(ContentTypes.`text/html(UTF-8)`)
+        }
+    }
+
+
     test("Route POST /products should create a new product") {
         var mockUsers = mock[Users]
         val mockProducts = mock[Products]

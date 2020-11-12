@@ -1,21 +1,16 @@
 package poca
 
 import akka.http.scaladsl.server.Directives._
-import java.time.LocalDateTime
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMessage, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{authenticateBasic, complete, concat, formFieldMap, get, path, post}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.{Route, StandardRoute}
-import akka.http.scaladsl.client.RequestBuilding.Get
-import com.typesafe.scalalogging.LazyLogging
-import play.twirl.api.HtmlFormat
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import TwirlMarshaller._
 import akka.http.scaladsl.model.StatusCodes.{Found, Unauthorized}
-import org.graalvm.compiler.core.common.Fields
 
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
@@ -89,6 +84,20 @@ class Routes(users: Users, products: Products, carts: Carts)
       path("users") {
         get {
           complete(super[UserRoutes].getUsers(users))
+        }
+      },
+      path("products") {
+        authenticateBasic(realm = "secure site", myUserPassAuthenticator) { userName =>
+          (post & formFieldMap) { fields =>
+            complete(super[ProductRoutes].addProduct(products, fields))
+          }
+        }
+      },
+      path("products") {
+        authenticateBasic(realm = "secure site", myUserPassAuthenticator) { userName =>
+          get {
+            complete(super[ProductRoutes].getProducts(products))
+          }
         }
       },
       path("products") {
