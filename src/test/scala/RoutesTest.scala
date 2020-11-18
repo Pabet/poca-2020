@@ -8,7 +8,8 @@ import org.scalatest.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
 import poca.{Carts, Categories, Category, CategoryDoesntExistsException, IncorrectPriceException, MyDatabase, Product, Products, Role, Roles, RoleDoesntExistsException, Routes, User, UserAlreadyExistsException, Users}
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+
+
 
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
 
@@ -152,13 +153,10 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
-        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
-
-
         val request = HttpRequest(
             method = HttpMethods.GET,
             uri = "/products")
-        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
+        request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
 
             contentType should ===(ContentTypes.`text/html(UTF-8)`)
@@ -175,14 +173,13 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
-        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
-
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
         )
-        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
+
+        request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Product successfully added to the marketplace.")
@@ -199,14 +196,12 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
-        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
-
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "-1"), ("detail", "test details")).toEntity
         )
-        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
+        request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Cannot insert product with a price < 0")
@@ -225,14 +220,12 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
 
-        val validCredentials = BasicHttpCredentials("John", "p4ssw0rd")
-
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
         )
-        request ~> addCredentials(validCredentials) ~> routesUnderTest ~> check {
+        request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
             entityAs[String] should ===("Cannot insert product with a price < 0")

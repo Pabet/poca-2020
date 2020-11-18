@@ -14,7 +14,7 @@ import akka.http.scaladsl.model.StatusCodes.{Found, Unauthorized}
 import auth.PocaSession
 import com.softwaremill.session.CsrfDirectives.{randomTokenCsrfProtection, setNewCsrfToken}
 import com.softwaremill.session.CsrfOptions.checkHeader
-import com.softwaremill.session.SessionDirectives.{invalidateSession, requiredSession, setSession}
+import com.softwaremill.session.SessionDirectives.{invalidateSession, requiredSession, setSession, optionalSession}
 import com.softwaremill.session.SessionOptions.{oneOff, refreshable, usingCookies, usingHeaders}
 
 import scala.concurrent.duration.{Duration, MILLISECONDS}
@@ -38,6 +38,7 @@ class Routes(users: Users, products: Products, carts: Carts)
 
   val myRequiredSession = requiredSession(refreshable, usingCookies)
   val myInvalidateSession = invalidateSession(refreshable, usingCookies)
+  val myOptionalSession = optionalSession(refreshable, usingCookies)
 
   def getHello(): HttpEntity.Strict = {
     logger.info("I got a request to greet.")
@@ -45,14 +46,6 @@ class Routes(users: Users, products: Products, carts: Carts)
       ContentTypes.`text/html(UTF-8)`,
       "<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>"
     )
-  }
-
-  //à modifier
-  def myUserPassAuthenticator(credentials: Credentials) = {
-    credentials match {
-      case p @ Credentials.Provided(id) if p.verify("p4ssw0rd") => Some(id)
-      case _ => None
-    }
   }
 
   def checkCredentials(credentials: BasicHttpCredentials) ={
@@ -78,8 +71,10 @@ class Routes(users: Users, products: Products, carts: Carts)
       },
       path("hello") {
         get {
-          complete(getHello())
-        }
+          myOptionalSession { session =>
+            complete(getHello())
+          }
+        }       
       },
       path("signin") {
         get {
@@ -114,26 +109,30 @@ class Routes(users: Users, products: Products, carts: Carts)
       },
       path("users") {
         get {
-          complete(super[UserRoutes].getUsers(users))
+          myOptionalSession { session =>
+            complete(super[UserRoutes].getUsers(users))
+          }
         }
       },
       path("products") {
-        (post & formFieldMap) { fields =>
-          complete(super[ProductRoutes].addProduct(products, fields))
+        myOptionalSession { session =>
+          (post & formFieldMap) { fields =>
+            complete(super[ProductRoutes].addProduct(products, fields))
+          }
         }
       },
       path("products") {
         get {
-          logger.info(s"Before requiredSession")
-          myRequiredSession { session =>
-            logger.info(s"Username ${session.username}")
+          myOptionalSession { session =>
             complete(super[ProductRoutes].getProducts(products))
           }
         }
       },
       path("purchase") {
-        (post & formFieldMap) { fields =>
-          complete(super[ProductRoutes].buyProduct(products, fields))
+        myOptionalSession { session =>
+          (post & formFieldMap) { fields =>
+            complete(super[ProductRoutes].buyProduct(products, fields))
+          }
         }
       }
       /* TODO implement when ProductRoutes.getUserCarts() is implemented
