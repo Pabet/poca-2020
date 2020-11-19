@@ -10,6 +10,7 @@ import org.scalamock.scalatest.MockFactory
 import poca.{Carts, Categories, Category, CategoryDoesntExistsException, IncorrectPriceException, MyDatabase, Product, Products, Role, Roles, RoleDoesntExistsException, Routes, User, UserAlreadyExistsException, Users}
 
 
+
 class RoutesTest extends AnyFunSuite with Matchers with MockFactory with ScalatestRouteTest {
 
     // the Akka HTTP route testkit does not yet support a typed actor system (https://github.com/akka/akka-http/issues/2036)
@@ -162,6 +163,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         }
     }
 
+
     test("Route POST /products should create a new product") {
         var mockUsers = mock[Users]
         val mockProducts = mock[Products]
@@ -176,6 +178,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
             uri = "/products",
             entity = FormData(("name", "test"), ("price", "1"), ("detail", "test details"), ("categoryName", "testCategory")).toEntity
         )
+
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
             contentType should ===(ContentTypes.`text/plain(UTF-8)`)
