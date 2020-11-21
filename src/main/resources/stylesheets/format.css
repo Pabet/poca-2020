@@ -14,7 +14,7 @@ p#txt_centre{
 }
 
 p#commentaire{
-	text-align:center;font-size:10px;font-weight:lighter;color:aqua;
+	text-align:center;font-size:15px;font-weight:lighter;color:aqua;
 }
 
 label#nom_champs{

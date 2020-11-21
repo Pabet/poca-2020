@@ -67,13 +67,35 @@ trait UserRoutes extends LazyLogging {
           }
         }
         
-        var CanCreate : Boolean = false
         fields.get("userPassword") match {
           case Some(userPassword) =>{
             fields.get("confirmPassword") match {
               case Some(confirmPassword) =>{
                 if(userPassword == confirmPassword){
-                  CanCreate = true
+                    val userCreation = users.createUser(username = username, userPassword = userPassword, role = role)
+                      userCreation
+                      .map(_ => {
+                        HttpResponse(
+                          StatusCodes.OK,
+                            entity =
+                              s"Welcome '$username'! You've just been registered to our great marketplace."
+                        )
+                    })
+                  .recover({
+                    case exc: UserAlreadyExistsException => {
+                      HttpResponse(
+                        StatusCodes.OK,
+                          entity =
+                            s"The username '$username' is already taken. Please choose another username."
+                      )
+                    }
+                    case exc: RoleDoesntExistsException => {
+                      HttpResponse(
+                        StatusCodes.OK,
+                        entity = "Cannot insert user, there is not this role."
+                      )
+                    }
+                  })
                 }else{
                   Future(
                     HttpResponse(
@@ -101,33 +123,6 @@ trait UserRoutes extends LazyLogging {
                     )
                   )
           }
-        }
-
-        if(CanCreate){
-          val userCreation = users.createUser(username = username, userPasword = userPasword, role = role)
-          userCreation
-            .map(_ => {
-              HttpResponse(
-                StatusCodes.OK,
-                entity =
-                  s"Welcome '$username'! You've just been registered to our great marketplace."
-              )
-            })
-            .recover({
-              case exc: UserAlreadyExistsException => {
-                HttpResponse(
-                  StatusCodes.OK,
-                  entity =
-                    s"The username '$username' is already taken. Please choose another username."
-                )
-              }
-              case exc: RoleDoesntExistsException => {
-                HttpResponse(
-                  StatusCodes.OK,
-                  entity = "Cannot insert user, there is not this role."
-                )
-              }
-            })
         }
       }
       case None => {
