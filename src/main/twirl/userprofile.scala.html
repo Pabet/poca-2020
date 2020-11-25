@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+    <title>User Profile</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="format.css" />
+</head>
+<body>
+<h1>My Profile</h1>
+<br>
+<div id="profile-container">
+    <image id="profileImage" src="https://exoplatform.github.io/ux-guidelines/img/exo_icon.jpg" />
+</div>
+<input id="imageUpload" type="file" name="profile_photo" placeholder="Photo">
+<br><br>
+<label for="username">username:</label>
+<input type="text" name="username"></input>
+<br><br>
+<label for="userMail">email:</label>
+<input type="email" name="userMail"></input>
+<br><br>
+<form action="/getOrders">
+    <label for="orders">My orders:</label>
+    <ol>
+        <li>Order O12, Date : 24/11/2020, Price : 223.34, Status : delivered</li>
+        <li>Order O23, Date : 24/11/2019, Price : 254.3, Status : delivered</li>
+        <li>Order O34, Date : 24/11/2018, Price : 24.366, Status : delivered</li>
+    </ol>
+</form>
+<br><br>
+<input type="submit" value="Update">
+</body>
+</html>
