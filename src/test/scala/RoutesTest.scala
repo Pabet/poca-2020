@@ -62,7 +62,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto"), ("roleName", "testRole")).toEntity
+            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -86,7 +86,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto")).toEntity
+            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -112,7 +112,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto"), ("roleName", "testRole")).toEntity
+            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
