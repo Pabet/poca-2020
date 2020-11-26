@@ -54,7 +54,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     test("Route POST /register should create a new user") {
         val role = Some(Role(None, "testRole"))
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto", role).returning(Future("anyString"))
+        (mockUsers.createUser _).expects("toto","1234", role).returning(Future("anyString"))
         val mockProducts = mock[Products]
         var mockCarts = mock[Carts]
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts).routes
@@ -75,7 +75,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
 
     test("Route POST /register should warn the user when username is already taken") {
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto", None).returns(Future({
+        (mockUsers.createUser _).expects("toto","1234", None).returns(Future({
             throw new UserAlreadyExistsException("")
         })).once()
         val mockProducts = mock[Products]
@@ -100,7 +100,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     test("Route POST /register should warn the user when user is not added due to role") {
         var mockUsers = mock[Users]
         val role = Some(Role(None, "testRole"))
-        (mockUsers.createUser _).expects("toto", role).returning(Future({
+        (mockUsers.createUser _).expects("toto","1234", role).returning(Future({
             throw new RoleDoesntExistsException("")
         })).once()
 
