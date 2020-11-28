@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ang">
+    <head>
+		<title>Add product</title>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href= "format.css"/>
+	</head>
+	
+	<body>
+		<div id="formulaire">
+			<h1 id="Titre_Centre">Add product</h1>
+
+			<p>Here, you can add a product:</p>
+
+            <form id="addProduct_form" action=/products method="post">
+                
+				<label id="category_label" for="categoryName">Category:  </label>
+                <input id="categoryName" type="text" name="categoryName"></input><br>
+                
+				<label id="product_name" for="name">Name of the product:  </label>
+                <input id="name" type="text" name="name"></input><br>
+
+                <label id="product_price" for="price">Price:  </label>
+                <input id="price" type="text" name="price"></input><br>
+
+                <label id="product_detail" for="detail">Detail:  </label>
+                <input id="detail" type="text" name="detail"></input><br>
+                
+                <input id="addProduct" type="submit" value="Add the product">
+
+			</form>
+
+		</div>
+	</body>
+</html>

@@ -142,6 +142,13 @@ class Routes(users: Users, products: Products, carts: Carts)
             complete(super[ProductRoutes].buyProduct(products, fields))
           }
         }
+      },
+      path("addProduct") {
+        get {
+          myOptionalSession { session =>
+            complete(super[ProductRoutes].getAddProduct(products))
+          }
+        }
       }
       /* TODO implement when ProductRoutes.getUserCarts() is implemented
       path("carts") {
