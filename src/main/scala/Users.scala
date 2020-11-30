@@ -37,11 +37,11 @@ class Users {
     val users = TableQuery[UsersTable]
     val rolesTable = TableQuery[RolesTable]
 
-    def createUser(username: String, role: Option[Role]) = {
+    def createUser(username: String, userPassword: String, role: Option[Role]) = {
         val userId =  UUID.randomUUID.toString
 
         def persistNewUser(roleId: Option[Int]) = {
-            val newUser = User(userId, username, "", "", LocalDateTime.now(), roleId)
+            val newUser = User(userId, username, userPassword, "", LocalDateTime.now(), roleId)
             val dbio: DBIO[Int] = users += newUser
             var resultFuture: Future[Int] = db.run(dbio)
             resultFuture.map(_ => userId)

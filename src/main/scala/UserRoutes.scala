@@ -48,6 +48,7 @@ trait UserRoutes extends LazyLogging {
       fields: Map[String, String]
   ): Future[HttpResponse] = {
     logger.info("I got a request to register.")
+    
 
     fields.get("username") match {
       case Some(username) => {
@@ -65,31 +66,64 @@ trait UserRoutes extends LazyLogging {
             role = None
           }
         }
-
-        val userCreation = users.createUser(username = username, role = role)
-        userCreation
-          .map(_ => {
-            HttpResponse(
-              StatusCodes.OK,
-              entity =
-                s"Welcome '$username'! You've just been registered to our great marketplace."
-            )
-          })
-          .recover({
-            case exc: UserAlreadyExistsException => {
-              HttpResponse(
-                StatusCodes.OK,
-                entity =
-                  s"The username '$username' is already taken. Please choose another username."
-              )
+        
+        fields.get("userPassword") match {
+          case Some(userPassword) =>{
+            fields.get("confirmPassword") match {
+              case Some(confirmPassword) =>{
+                if(userPassword == confirmPassword){
+                    val userCreation = users.createUser(username = username, userPassword = userPassword, role = role)
+                      userCreation
+                      .map(_ => {
+                        HttpResponse(
+                          StatusCodes.OK,
+                            entity =
+                              s"Welcome '$username'! You've just been registered to our great marketplace."
+                        )
+                    })
+                  .recover({
+                    case exc: UserAlreadyExistsException => {
+                      HttpResponse(
+                        StatusCodes.OK,
+                          entity =
+                            s"The username '$username' is already taken. Please choose another username."
+                      )
+                    }
+                    case exc: RoleDoesntExistsException => {
+                      HttpResponse(
+                        StatusCodes.OK,
+                        entity = "Cannot insert user, there is not this role."
+                      )
+                    }
+                  })
+                }else{
+                  Future(
+                    HttpResponse(
+                    StatusCodes.BadRequest,
+                    entity = "Field 'pasword' and 'confirm' haven't the same value."
+                    )
+                  )
+                }
+              }
+              case None => {
+                Future(
+                    HttpResponse(
+                    StatusCodes.BadRequest,
+                    entity = "You forgot to confirme your password"
+                    )
+                  )
+              }
             }
-            case exc: RoleDoesntExistsException => {
-              HttpResponse(
-                StatusCodes.OK,
-                entity = "Cannot insert user, there is not this role."
-              )
-            }
-          })
+          }
+          case None => {
+            Future(
+                    HttpResponse(
+                    StatusCodes.BadRequest,
+                    entity = "You forgot to create a password"
+                    )
+                  )
+          }
+        }
       }
       case None => {
         Future(
