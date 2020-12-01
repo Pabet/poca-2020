@@ -1,4 +1,4 @@
-@(products: Seq[poca.Product])
+@(products: Seq[poca.Product], username : Option[String])
 
 <!doctype html>
 <html>
@@ -6,10 +6,9 @@
 	<head>
 		<title>Product</title>
 		<meta charset="utf-8" />
-		<link rel="stylesheet" type="text/css" href="format.css" /> 
+		<link rel="stylesheet" type="text/css" href="format.css" />
 	</head>
-
-<h1 id="Titre_Centre">This is like some nice Amazon rip off</h1>
+@header(username)
 
 <form id="searchform" action=/products method="get">
      <input placeholder="Enter a product name" type="text" name="productName"/>
@@ -39,5 +38,5 @@
         </tr>
         }
 </table>
-
+@footer()
 </html>
