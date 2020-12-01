@@ -15,7 +15,15 @@
             <form id="addProduct_form" action=/products method="post">
                 
 				<label id="category_label" for="categoryName">Category:  </label>
-                <input id="categoryName" type="text" name="categoryName"></input><br>
+				<SELECT>
+					<OPTION>Furniture
+					<OPTION>Toys & Games
+					<OPTION>Beauty
+					<OPTION>Tools & Home improvement
+					<OPTION>Food
+					<OPTION>Household appliances
+					<OPTION>Books
+				</SELECT><br>
                 
 				<label id="product_name" for="name">Name of the product:  </label>
                 <input id="name" type="text" name="name"></input><br>
@@ -24,7 +32,7 @@
                 <input id="price" type="text" name="price"></input><br>
 
                 <label id="product_detail" for="detail">Detail:  </label>
-                <input id="detail" type="text" name="detail"></input><br>
+                <textarea id="detail" type="text" name="detail" rows="4" cols="50"></textarea><br>
                 
                 <input id="addProduct" type="submit" value="Add the product">
 
