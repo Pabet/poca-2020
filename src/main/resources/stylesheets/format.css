@@ -49,3 +49,14 @@ div#Recap{
 ul#usr_list{
 	background-color:WHITE;width:98%;
 }
+
+/* Navbar css*/
+navbar{
+}
+
+navbar-title{
+    font-size:35px;
+}
+nav-link{
+    font-size:25px;
+}

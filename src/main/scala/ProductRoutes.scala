@@ -1,24 +1,14 @@
 package poca
 
-import akka.http.scaladsl.model.{
-  ContentTypes,
-  HttpEntity,
-  HttpResponse,
-  StatusCodes
-}
-import akka.http.scaladsl.server.Directives.{
-  complete,
-  concat,
-  formFieldMap,
-  get,
-  path,
-  post
-}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.Directives.{complete, concat, formFieldMap, get, path, post}
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
+
 import scala.concurrent.{ExecutionContext, Future}
 import TwirlMarshaller._
+import auth.PocaSession
 
 trait ProductRoutes extends LazyLogging {
 
@@ -75,12 +65,14 @@ trait ProductRoutes extends LazyLogging {
       })
   }
 
-  def getProducts(products: Products): Future[HtmlFormat.Appendable] = {
+  def getProducts(products: Products, session : Option[PocaSession]): Future[HtmlFormat.Appendable] = {
     logger.info("I got a request to get product list.")
 
     val productSeqFuture: Future[Seq[Product]] = products.getAllProducts
-
-    productSeqFuture.map(productSeq => html.products(productSeq))
+    if(session.isDefined)
+      productSeqFuture.map(productSeq => html.products(productSeq,Some(session.last.username)))
+    else
+      productSeqFuture.map(productSeq => html.products(productSeq,None))
   }
 
   def buyProduct(

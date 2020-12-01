@@ -1,0 +1,23 @@
+@(username : Option[String])
+<!-- Navbar-->
+<header class="header">
+    <nav class="navbar">
+        <div class="container">
+            <div style="display: flex; justify-content: flex-start">
+                <p><a href="products" class="nav-link">Home</a></p>
+            </div>
+            <div style="display: flex; justify-content: flex-end">
+                <p>
+                    @if(username.isDefined){
+                            Connecté en tant que @username.last -
+                            <a href="#" class="nav-link">My cart</a>
+                            <a href="#" class="nav-link">My account</a>
+                    } else{
+                    <a href="signin" class="nav-link">Sign in</a>
+                    }
+                </p>
+            </div>
+            <h1 id="Titre_Centre">POCA, everything you don't need to buy</h1>
+        </div>
+    </nav>
+</header>

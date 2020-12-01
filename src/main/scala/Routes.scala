@@ -69,6 +69,14 @@ class Routes(users: Users, products: Products, carts: Carts)
         logger.info("I got a request for css resource.")
         getFromResource("stylesheets/format.css")
       },
+      path("assets/*file") {
+        logger.info("I got a request for css resource.")
+        getFromResource("stylesheets/format.css")
+      },
+      path("webjar/*file") {
+        logger.info("I got a request for css resource.")
+        getFromResource("stylesheets/format.css")
+      },
       path("hello") {
         get {
           myOptionalSession { session =>
@@ -124,7 +132,7 @@ class Routes(users: Users, products: Products, carts: Carts)
       path("products") {
         get {
           myOptionalSession { session =>
-            complete(super[ProductRoutes].getProducts(products))
+            complete(super[ProductRoutes].getProducts(products,session))
           }
         }
       },
