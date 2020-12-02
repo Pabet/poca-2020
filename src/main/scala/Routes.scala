@@ -19,9 +19,10 @@ import com.softwaremill.session.SessionOptions.{oneOff, refreshable, usingCookie
 
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
-class Routes(users: Users, products: Products, carts: Carts)
+class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
     extends UserRoutes
-    with ProductRoutes {
+    with ProductRoutes
+    with CommandRoutes {
 
   override implicit val executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global
@@ -149,7 +150,22 @@ class Routes(users: Users, products: Products, carts: Carts)
             complete(super[ProductRoutes].getAddProduct(products))
           }
         }
+      },
+      path("commands") {
+        myOptionalSession { session =>
+          (post & formFieldMap) { fields =>
+            complete(super[CommandRoutes].addCommand(commands, fields))
+          }
+        }
+      },
+      path("commands") {
+        myOptionalSession { session =>
+          (get & formFieldMap) { fields =>
+            complete(super[CommandRoutes].getCommand(commands, fields))
+          }
+        }
       }
+
       /* TODO implement when ProductRoutes.getUserCarts() is implemented
       path("carts") {
         get {

@@ -682,4 +682,42 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         cart.products.last.quantity should be (3)
     }
 
+    test("Commands.createCommand should create a new command") {
+        val commands = new Commands()
+
+        val initialCommandsFuture = commands.getAllCommand
+        var initialAllCommands: Seq[Command] = Await.result(initialCommandsFuture, Duration.Inf)
+
+        val createCommandFuture = commands.createCommand("toto", 1)
+        Await.ready(createCommandFuture, Duration.Inf)
+
+        val commandsFuture = commands.getAllCommand
+        var allCommands: Seq[Command] = Await.result(commandsFuture, Duration.Inf)
+
+        allCommands.length should be(initialAllCommands.length + 1)
+        allCommands.last.commandName should be("toto")
+        allCommands.last.userId should be(1)
+    }
+
+    test("Commands.getCommandByUser should return a list of commands") {
+        val commands = new Commands()
+
+        val initialCommandsFuture = commands.getCommandByUser(0)
+        var initialAllCommands = Await.result(initialCommandsFuture, Duration.Inf)
+
+        val createCommandFuture = commands.createCommand("toto", 0)
+        Await.result(createCommandFuture, Duration.Inf)
+
+        val createCommandFuture2 = commands.createCommand("titi", 1)
+        Await.result(createCommandFuture2, Duration.Inf)
+
+        val createCommandFuture3 = commands.createCommand("tata", 0)
+        Await.result(createCommandFuture3, Duration.Inf)
+
+        val commandsFuture = commands.getCommandByUser(0)
+        var allCommands = Await.result(commandsFuture, Duration.Inf)
+
+        allCommands.length should be(initialAllCommands.length+2)
+    }
+
 }
