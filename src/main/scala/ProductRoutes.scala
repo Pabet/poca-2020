@@ -102,6 +102,10 @@ trait ProductRoutes extends LazyLogging {
     productFuture.map(product => html.purchase(product))
   }
 
+  def getAddProduct(products: Products): HtmlFormat.Appendable = {
+    logger.info("I got a request for adding a product.")
+    html.addProduct()
+  }
 
   /*
   TODO add the html template for carts and call it here
