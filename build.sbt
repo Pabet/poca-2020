@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.4.0",
   "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
   "com.softwaremill.akka-http-session" %% "jwt"  % "0.5.11",
+  "javax.mail" % "mail" % "1.4.7"
 )
 
 dockerExposedPorts ++= Seq(8080)
