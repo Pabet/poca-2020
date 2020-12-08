@@ -46,7 +46,7 @@ class Users {
             var resultFuture: Future[Int] = db.run(dbio)
             resultFuture.map(_ => userId)
         }
-
+        val carts = new Carts();
         val existingUsersFuture = getUserByUsername(username)
         existingUsersFuture.flatMap(existingUser => {
             if (existingUser.isEmpty) {
@@ -59,7 +59,10 @@ class Users {
 				        	throw new RoleDoesntExistsException(s"There is no role named '$roleName'.")
 				        }
 				        else {
-				           	persistNewUser(existingRole.last.roleId).map(_ => userId)
+				           	persistNewUser(existingRole.last.roleId)
+                      // Create empty cart for user so he has at least one
+                      .flatMap(_ => carts.createCart(userId))
+                      .map(_ => userId)
 				        }
 				    })
 				}
