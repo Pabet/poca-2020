@@ -57,7 +57,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val mockCommands = mock[Commands]
         val role = Some(Role(None, "testRole"))
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto","1234", role).returning(Future("anyString"))
+        (mockUsers.createUser _).expects("toto","1234", "poca.marketplace@gmail.com", role).returning(Future("anyString"))
         val mockProducts = mock[Products]
         var mockCarts = mock[Carts]
         val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts,mockCommands).routes
@@ -65,7 +65,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
+            entity = FormData(("username", "toto"), ("userMail", "poca.marketplace@gmail.com"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -79,7 +79,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     test("Route POST /register should warn the user when username is already taken") {
         val mockCommands = mock[Commands]
         var mockUsers = mock[Users]
-        (mockUsers.createUser _).expects("toto","1234", None).returns(Future({
+        (mockUsers.createUser _).expects("toto","1234", "poca.marketplace@gmail.com",None).returns(Future({
             throw new UserAlreadyExistsException("")
         })).once()
         val mockProducts = mock[Products]
@@ -90,7 +90,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234")).toEntity
+            entity = FormData(("username", "toto"), ("userMail", "poca.marketplace@gmail.com"), ("userPassword", "1234"), ("confirmPassword", "1234")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)
@@ -105,7 +105,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val mockCommands = mock[Commands]
         var mockUsers = mock[Users]
         val role = Some(Role(None, "testRole"))
-        (mockUsers.createUser _).expects("toto","1234", role).returning(Future({
+        (mockUsers.createUser _).expects("toto","1234", "poca.marketplace@gmail.com",role).returning(Future({
             throw new RoleDoesntExistsException("")
         })).once()
 
@@ -117,7 +117,7 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
         val request = HttpRequest(
             method = HttpMethods.POST,
             uri = "/register",
-            entity = FormData(("username", "toto"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
+            entity = FormData(("username", "toto"), ("userMail", "poca.marketplace@gmail.com"), ("userPassword", "1234"), ("confirmPassword", "1234"), ("roleName", "testRole")).toEntity
         )
         request ~> routesUnderTest ~> check {
             status should ===(StatusCodes.OK)

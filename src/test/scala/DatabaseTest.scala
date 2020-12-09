@@ -43,7 +43,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users: Users = new Users()
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234" , "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val getUsersFuture: Future[Seq[User]] = users.getAllUsers
@@ -63,7 +63,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val roles: Roles = new Roles()
         val createRoleFuture = roles.createRole("awesomeRole")
 
-        val createUserFuture = users.createUser("toto", "1234", Some(Role(None, "awesomeRole")))
+        val createUserFuture = users.createUser("toto", "1234" , "poca.marketplace@gmail.com",Some(Role(None, "awesomeRole")))
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val getRoleFuture = roles.getRoleByName("awesomeRole")
@@ -81,10 +81,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.createUser returned future should fail if the user already exists") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createDuplicateUserFuture = users.createUser("toto", "1234", None)
+        val createDuplicateUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         Await.ready(createDuplicateUserFuture, Duration.Inf)
 
         createDuplicateUserFuture.value match {
@@ -98,7 +98,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.createUser returned future should fail if the role does not exists") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto", "1234", Some(Role(None, "DoesNotExists")))
+        val createUserFuture = users.createUser("toto", "1234" , "poca.marketplace@gmail.com",Some(Role(None, "DoesNotExists")))
         Await.ready(createUserFuture, Duration.Inf)
 
         createUserFuture.value match {
@@ -112,7 +112,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getUserByUsername should return no user if it does not exist") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("somebody-else")
@@ -124,7 +124,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
     test("Users.getUserByUsername should return a user") {
         val users: Users = new Users()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserFuture: Future[Option[User]] = users.getUserByUsername("toto")
@@ -143,7 +143,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val createRoleFuture = roles.createRole("awesomeRole")
         Await.ready(createRoleFuture, Duration.Inf)
 
-        val createUserFuture = users.createUser("toto","1234",Some(Role(None,"awesomeRole")))
+        val createUserFuture = users.createUser("toto","1234S" , "poca.marketplace@gmail.com",Some(Role(None,"awesomeRole")))
         val newUserId = Await.ready(createUserFuture, Duration.Inf)
 
         val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
@@ -160,10 +160,10 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialUsersFuture = users.getAllUsers
         var initialAllUsers = Await.result(initialUsersFuture, Duration.Inf)
 
-        val createUserFuture = users.createUser("riri","abcde", None)
+        val createUserFuture = users.createUser("riri","abcde", "poca.marketplace@gmail.com", None)
         Await.ready(createUserFuture, Duration.Inf)
 
-        val createAnotherUserFuture = users.createUser("fifi","edcba", None)
+        val createAnotherUserFuture = users.createUser("fifi","edcba", "poca.marketplace@gmail.com", None)
         Await.ready(createAnotherUserFuture, Duration.Inf)
 
         val returnedUserSeqFuture: Future[Seq[User]] = users.getAllUsers
@@ -414,7 +414,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val initialAllCartFuture = carts.getAllCarts
         var initialAllCarts: Seq[Cart] = Await.result(initialAllCartFuture, Duration.Inf)
         // Create user
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         Await.ready(createUserFuture, Duration.Inf)
         val getUserFuture = users.getUserByUsername("toto")
         val returnedUser = Await.result(getUserFuture,Duration.Inf)
@@ -437,7 +437,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val products = new Products()
 
         // Create user
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
         // Create cart
         val createCartFuture = carts.createCart(newUserId)
@@ -465,8 +465,8 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val carts = new Carts()
         val users = new Users()
 
-        val userId = Await.result(users.createUser("toto", "1234", None),Duration.Inf)
-        val secondUserId = Await.result(users.createUser("tata", "5678", None),Duration.Inf)
+        val userId = Await.result(users.createUser("toto", "1234", "poca.marketplace@gmail.com", None),Duration.Inf)
+        val secondUserId = Await.result(users.createUser("tata", "5678", "poca.marketplace@gmail.com", None),Duration.Inf)
 
         Await.result(carts.createCart(userId), Duration.Inf)
         Await.result(carts.createCart(userId), Duration.Inf)
@@ -481,7 +481,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val carts = new Carts()
         val users = new Users()
 
-        val userId = Await.result(users.createUser("toto", "1234", None),Duration.Inf)
+        val userId = Await.result(users.createUser("toto", "1234", "poca.marketplace@gmail.com", None),Duration.Inf)
 
         carts.createCart(userId)
         carts.createCart(userId)
@@ -498,7 +498,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -526,7 +526,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -557,7 +557,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -588,7 +588,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
 
         //create user
-        val userId = Await.result(users.createUser("testguy","testpswrd", None), Duration.Inf)
+        val userId = Await.result(users.createUser("testguy","testpswrd", "poca.marketplace@gmail.com", None), Duration.Inf)
         val createCartFuture = carts.createCart(userId)
         Await.ready(createCartFuture, Duration.Inf)
 
@@ -626,7 +626,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
         val products = new Products()
 
-        val createUserFuture = users.createUser("toto", "1234", None)
+        val createUserFuture = users.createUser("toto", "1234", "poca.marketplace@gmail.com", None)
         val newUserId = Await.result(createUserFuture, Duration.Inf)
 
         val createCartFuture = carts.createCart(newUserId)
@@ -655,7 +655,7 @@ class DatabaseTest extends AnyFunSuite with Matchers with BeforeAndAfterAll with
         val users = new Users()
 
         //create user
-        val userId = Await.result(users.createUser("testguy", "testpswrd", None), Duration.Inf)
+        val userId = Await.result(users.createUser("testguy", "testpswrd", "poca.marketplace@gmail.com", None), Duration.Inf)
         val createCartFuture = carts.createCart(userId)
         Await.ready(createCartFuture, Duration.Inf)
 

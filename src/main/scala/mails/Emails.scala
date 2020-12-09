@@ -4,15 +4,21 @@ import poca.User
 
 object Emails {
 
-  def registered(user: User): EmailDescription = EmailDescription(
+  def register(
+    name: String,
+    recipient: String
+  ): EmailDescription = EmailDescription(
     from = "poca.marketplace@gmail.com",
     fromName = "Marketplace registration",
-    to = user.userMail,
-    content = "to implement yet",
+    to = recipient,
+    content = emails.html.registered(name, recipient).body,
     subject = "Marketplace validator suite registration confirmation"
   )
 
-  def resetPassword(user: User, id: PasswordResetId): EmailDescription = EmailDescription(
+  def resetPassword(
+    user: User,
+    id: PasswordResetId
+  ): EmailDescription = EmailDescription(
     from = "poca.matketplace@gmail.com",
     fromName = "Marketplace password reset",
     to = user.userMail,

@@ -1,24 +1,18 @@
 package poca
 
-import akka.http.scaladsl.model.{
-  ContentTypes,
-  HttpEntity,
-  HttpResponse,
-  StatusCodes
-}
-import akka.http.scaladsl.server.Directives.{
-  complete,
-  concat,
-  formFieldMap,
-  get,
-  path,
-  post
-}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import com.typesafe.scalalogging.LazyLogging
+import mails.MailService
 import play.twirl.api.HtmlFormat
+
 import scala.concurrent.{ExecutionContext, Future}
-import TwirlMarshaller._
+
+case class UserData(
+  username: String,
+  userPassword: String,
+  email: String,
+  role: Option[Role]
+)
 
 trait UserRoutes extends LazyLogging {
 
@@ -48,7 +42,6 @@ trait UserRoutes extends LazyLogging {
       fields: Map[String, String]
   ): Future[HttpResponse] = {
     logger.info("I got a request to register.")
-    
 
     fields.get("username") match {
       case Some(username) => {
@@ -66,74 +59,81 @@ trait UserRoutes extends LazyLogging {
             role = None
           }
         }
-        
-        fields.get("userPassword") match {
-          case Some(userPassword) =>{
-            fields.get("confirmPassword") match {
-              case Some(confirmPassword) =>{
-                if(userPassword == confirmPassword){
-                    val userCreation = users.createUser(username = username, userPassword = userPassword, role = role)
-                      userCreation
-                      .map(_ => {
+        fields.get("userMail") match {
+          case Some(userMail) => {
+            fields.get("userPassword") match {
+              case Some(userPassword) =>{
+                fields.get("confirmPassword") match {
+                  case Some(confirmPassword) =>{
+                    if(userPassword == confirmPassword){
+                        val userCreation = users.createUser(
+                          username = username,
+                          userPassword = userPassword,
+                          userMail = userMail,
+                          role = role)
+                          userCreation
+                          .map(_ => {
+//                            MailService.sendRegistrationMail(username, userMail)
+                            HttpResponse(
+                              StatusCodes.OK,
+                                entity =
+                                  s"Welcome '$username'! You've just been registered to our great marketplace."
+                            )
+                        })
+                      .recover({
+                        case exc: UserAlreadyExistsException => {
+                          HttpResponse(
+                            StatusCodes.OK,
+                              entity =
+                                s"The username '$username' is already taken. Please choose another username."
+                          )
+                        }
+                        case exc: RoleDoesntExistsException => {
+                          HttpResponse(
+                            StatusCodes.OK,
+                            entity = "Cannot insert user, there is not this role."
+                          )
+                        }
+                      })
+                    }else{
+                      Future(
                         HttpResponse(
-                          StatusCodes.OK,
-                            entity =
-                              s"Welcome '$username'! You've just been registered to our great marketplace."
+                        StatusCodes.BadRequest,
+                        entity = "Field 'pasword' and 'confirm' haven't the same value."
                         )
-                    })
-                  .recover({
-                    case exc: UserAlreadyExistsException => {
-                      HttpResponse(
-                        StatusCodes.OK,
-                          entity =
-                            s"The username '$username' is already taken. Please choose another username."
                       )
                     }
-                    case exc: RoleDoesntExistsException => {
-                      HttpResponse(
-                        StatusCodes.OK,
-                        entity = "Cannot insert user, there is not this role."
+                  }
+                  case None => {
+                    Future(
+                        HttpResponse(
+                        StatusCodes.BadRequest,
+                        entity = "You forgot to confirme your password"
+                        )
                       )
-                    }
-                  })
-                }else{
-                  Future(
-                    HttpResponse(
-                    StatusCodes.BadRequest,
-                    entity = "Field 'pasword' and 'confirm' haven't the same value."
-                    )
-                  )
+                  }
                 }
               }
               case None => {
                 Future(
-                    HttpResponse(
-                    StatusCodes.BadRequest,
-                    entity = "You forgot to confirme your password"
-                    )
-                  )
+                        HttpResponse(
+                        StatusCodes.BadRequest,
+                        entity = "You forgot to create a password"
+                        )
+                      )
               }
             }
           }
           case None => {
             Future(
-                    HttpResponse(
-                    StatusCodes.BadRequest,
-                    entity = "You forgot to create a password"
-                    )
-                  )
+              HttpResponse(
+                StatusCodes.BadRequest,
+                entity = "Field 'username' not found."
+              )
+            )
           }
         }
       }
-      case None => {
-        Future(
-          HttpResponse(
-            StatusCodes.BadRequest,
-            entity = "Field 'username' not found."
-          )
-        )
-      }
     }
   }
-
 }
