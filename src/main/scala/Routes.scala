@@ -1,39 +1,72 @@
 package poca
 
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMessage, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.Directives.{authenticateBasic, complete, concat, formFieldMap, get, path, post}
+import akka.http.scaladsl.model.{
+  ContentTypes,
+  HttpEntity,
+  HttpMessage,
+  HttpResponse,
+  StatusCodes
+}
+import akka.http.scaladsl.server.Directives.{
+  authenticateBasic,
+  complete,
+  concat,
+  formFieldMap,
+  get,
+  path,
+  post
+}
 import akka.http.scaladsl.server.directives.{Credentials, OnSuccessMagnet}
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, Route, StandardRoute}
+import akka.http.scaladsl.server.{
+  AuthorizationFailedRejection,
+  Route,
+  StandardRoute
+}
 import com.softwaremill.session._
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import TwirlMarshaller._
 import akka.http.scaladsl.model.StatusCodes.{Found, Unauthorized}
 import auth.PocaSession
-import com.softwaremill.session.CsrfDirectives.{randomTokenCsrfProtection, setNewCsrfToken}
+import com.softwaremill.session.CsrfDirectives.{
+  randomTokenCsrfProtection,
+  setNewCsrfToken
+}
 import com.softwaremill.session.CsrfOptions.checkHeader
-import com.softwaremill.session.SessionDirectives.{invalidateSession, requiredSession, setSession, optionalSession}
-import com.softwaremill.session.SessionOptions.{oneOff, refreshable, usingCookies, usingHeaders}
+import com.softwaremill.session.SessionDirectives.{
+  invalidateSession,
+  requiredSession,
+  setSession,
+  optionalSession
+}
+import com.softwaremill.session.SessionOptions.{
+  oneOff,
+  refreshable,
+  usingCookies,
+  usingHeaders
+}
 
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
 class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
     extends UserRoutes
     with ProductRoutes
-    with CommandRoutes {
+    with CommandRoutes
+    with CartRoutes {
 
   override implicit val executionContext: ExecutionContext =
     scala.concurrent.ExecutionContext.Implicits.global
 
-
   val sessionConfig = SessionConfig.default(
-    "p4NuwW0gCMGuwIVY1475AyIaZGVpFlMAmdtuErxa0Bjn6RDmidwZdv8ufohX3Z6L")
+    "p4NuwW0gCMGuwIVY1475AyIaZGVpFlMAmdtuErxa0Bjn6RDmidwZdv8ufohX3Z6L"
+  )
   implicit val sessionManager = new SessionManager[PocaSession](sessionConfig)
-  implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[PocaSession] {
-    def log(msg: String) = logger.info(msg)
-  }
+  implicit val refreshTokenStorage =
+    new InMemoryRefreshTokenStorage[PocaSession] {
+      def log(msg: String) = logger.info(msg)
+    }
 
   def mySetSession(v: PocaSession) = setSession(refreshable, usingCookies, v)
 
@@ -49,11 +82,11 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
     )
   }
 
-  def checkCredentials(credentials: BasicHttpCredentials) ={
+  def checkCredentials(credentials: BasicHttpCredentials) = {
     val existingUserFuture = users.getUserByUsername(credentials.username)
-    existingUserFuture.map{
-      user => {
-        if(user.isDefined && user.last.userPassword == credentials.password)
+    existingUserFuture.map { user =>
+      {
+        if (user.isDefined && user.last.userPassword == credentials.password)
           user
         else
           None
@@ -83,7 +116,7 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
           myOptionalSession { session =>
             complete(getHello())
           }
-        }       
+        }
       },
       path("signin") {
         get {
@@ -98,7 +131,7 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
           onSuccess(checkCredentials(credentials)) {
             case None => reject(AuthorizationFailedRejection)
             case Some(user) => {
-              val session = PocaSession(username)
+              val session = PocaSession(user.username)
               setSession(oneOff, usingCookies, session) {
                 redirect("products", Found)
               }
@@ -133,7 +166,7 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
       path("products") {
         get {
           myOptionalSession { session =>
-            complete(super[ProductRoutes].getProducts(products,session))
+            complete(super[ProductRoutes].getProducts(products, session))
           }
         }
       },
@@ -164,15 +197,27 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
             complete(super[CommandRoutes].getCommand(commands, fields))
           }
         }
+      },
+      pathPrefix("cart") {
+        concat(
+          (post & formFieldMap) { fields =>
+            logger.info("I got a request for /cart")
+            myRequiredSession { session =>
+              complete(
+                super[CartRoutes]
+                  .removeProductFromCart(users, carts, session.username, fields)
+              )
+            }
+          },
+          get {
+            myRequiredSession { session =>
+              complete(
+                super[CartRoutes].getUserCarts(users, carts, session.username)
+              )
+            }
+          }
+        )
       }
-
-      /* TODO implement when ProductRoutes.getUserCarts() is implemented
-      path("carts") {
-        get {
-          complete(super[ProductRoutes].getUserCarts(carts))
-        }
-      }
-       */
     )
 
 }
