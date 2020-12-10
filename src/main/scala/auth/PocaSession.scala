@@ -9,8 +9,8 @@ case class PocaSession(username: String)
 object PocaSession {
   implicit def serializer: SessionSerializer[PocaSession, String] =
     new SingleValueSessionSerializer(_.username,
-      (un: String) =>
+      (uname: String) =>
         Try {
-          PocaSession(un)
+          PocaSession(uname)
         })
 }
