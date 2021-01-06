@@ -20,24 +20,6 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
     override def createActorSystem(): akka.actor.ActorSystem =
         testKit.system.classicSystem
 
-    test("Route GET /hello should say hello") {
-        val mockCommands = mock[Commands]
-        var mockUsers = mock[Users]
-        val mockProducts = mock[Products]
-        var mockCarts = mock[Carts]
-
-        val routesUnderTest = new Routes(mockUsers,mockProducts,mockCarts,mockCommands).routes
-
-        val request = HttpRequest(uri = "/hello")
-        request ~> routesUnderTest ~> check {
-            status should ===(StatusCodes.OK)
-
-            contentType should ===(ContentTypes.`text/html(UTF-8)`)
-
-            entityAs[String] should ===("<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>")
-        }
-    }
-
     test("Route GET /signup should returns the signup page") {
         val mockCommands = mock[Commands]
         var mockUsers = mock[Users]
@@ -290,4 +272,5 @@ class RoutesTest extends AnyFunSuite with Matchers with MockFactory with Scalate
             entityAs[String] should === ("Command successfully added.")
         }
     }
+
 }
