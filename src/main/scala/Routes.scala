@@ -74,13 +74,6 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
   val myInvalidateSession = invalidateSession(refreshable, usingCookies)
   val myOptionalSession = optionalSession(refreshable, usingCookies)
 
-  def getHello(): HttpEntity.Strict = {
-    logger.info("I got a request to greet.")
-    HttpEntity(
-      ContentTypes.`text/html(UTF-8)`,
-      "<h1>Say hello to akka-http</h1><p>A marketpace developped by Dirty Picnic Tractors</p>"
-    )
-  }
 
   def checkCredentials(credentials: BasicHttpCredentials) = {
     val existingUserFuture = users.getUserByUsername(credentials.username)
@@ -110,13 +103,6 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
       path("webjar/*file") {
         logger.info("I got a request for css resource.")
         getFromResource("stylesheets/format.css")
-      },
-      path("hello") {
-        get {
-          myOptionalSession { session =>
-            complete(getHello())
-          }
-        }
       },
       path("signin") {
         get {
@@ -217,6 +203,9 @@ class Routes(users: Users, products: Products, carts: Carts, commands: Commands)
             }
           }
         )
+      },
+      path(Remaining) { _ =>
+        redirect("products", Found)
       }
     )
 
