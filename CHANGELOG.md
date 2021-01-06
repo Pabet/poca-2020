@@ -11,3 +11,9 @@
 * [#6](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/8) Setup Continuous Integration
 * [#4](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/4) Document the aim of the product
 * [#3](https://gaufre.informatique.univ-paris-diderot.fr/michelbl/poca-2020/issues/3) Add a change log
+* 
+Contributions - Sofia AIT AHCENE :
+* Sprint 1 : Task 19 - Gérer la demande de connexion
+* Sprint 2 et 3 : Task 36 - Vérifier le crédential pour chaque accès à l'app
+* Sprint 4 : Task 47 - Front UI ajout de produit
+* Sprint 5 : Task 64 - Refactorer les routes accessibles
